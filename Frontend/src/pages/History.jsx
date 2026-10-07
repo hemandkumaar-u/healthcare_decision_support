@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import {
     Search,
     Plus,
@@ -23,15 +24,87 @@ import Header from "../components/Header";
 function History() {
     const navigate = useNavigate();
 
-    const [history, setHistory] = useState(() => {
-        try {
-            return JSON.parse(
-                localStorage.getItem("analysisHistory") || "[]"
-            );
-        } catch {
-            return [];
+    const [history, setHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                // Using axios (which needs to be imported) or fetch. Let's use fetch since it's built-in or import axios.
+                // It's cleaner to just use fetch to avoid adding unused imports if axios isn't there, but we can import axios.
+                const response = await fetch("http://localhost:5000/api/patients");
+                if (!response.ok) {
+                    throw new Error("Failed to fetch history");
+                }
+                const data = await response.json();
+                
+                // Map the backend data to match the structure History.jsx expects
+                const formattedHistory = data.map(patient => {
+                    return {
+                        id: patient._id,
+                        patient: {
+                            name: patient.name,
+                            patientId: `PT-${patient._id.substring(0, 5).toUpperCase()}`,
+                            age: patient.age,
+                            gender: "Unknown", // Assuming not in backend yet
+                            mobile: "Unknown",
+                        },
+                        condition: "General Assessment",
+                        prediction: {
+                            class: getRiskClassNumber(patient.riskAssessment?.riskLevel),
+                            label: patient.riskAssessment?.riskLevel || "Unknown",
+                        },
+                        createdAt: patient.createdAt,
+                        dataCompleteness: patient.riskAssessment?.isInsufficientData ? 50 : 100, // Example mapping
+                        missingData: patient.riskAssessment?.isInsufficientData ? ["vitalSigns"] : [], // Example mapping
+                        input: {
+                            // Extract vitals if they were stored in JSON
+                            heartRate: extractVital(patient.vitalSigns, "HR") || "—",
+                            systolicBP: extractVital(patient.vitalSigns, "BP_SYS") || "—",
+                            diastolicBP: extractVital(patient.vitalSigns, "BP_DIA") || "—",
+                            temperature: extractVital(patient.vitalSigns, "TEMP") || "—",
+                            spo2: extractVital(patient.vitalSigns, "SPO2") || "—",
+                            respiratoryRate: extractVital(patient.vitalSigns, "RR") || "—",
+                        },
+                        prescription: { medications: [] }
+                    };
+                });
+                
+                setHistory(formattedHistory);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching history:", err);
+                setError(err.message);
+                setLoading(false);
+            }
+        };
+
+        fetchHistory();
+    }, []);
+
+    // Helper functions to map backend data to frontend requirements
+    const getRiskClassNumber = (riskLevel) => {
+        switch(riskLevel?.toLowerCase()) {
+            case 'low': return '1';
+            case 'medium': return '2';
+            case 'high': return '3';
+            case 'critical': return '4';
+            default: return '0';
         }
-    });
+    };
+
+    const extractVital = (vitalSignsStr, key) => {
+        // Mock extraction, as vitalSigns might be a raw string from frontend
+        if (!vitalSignsStr) return null;
+        // If vitalSigns was a stringified JSON, parse it:
+        try {
+            const vitals = JSON.parse(vitalSignsStr);
+            return vitals[key];
+        } catch {
+            return null; // fallback if it's just a regular string
+        }
+    };
 
     const [search, setSearch] = useState("");
     const [expandedId, setExpandedId] = useState(null);
@@ -92,10 +165,8 @@ function History() {
 
         setHistory(updatedHistory);
 
-        localStorage.setItem(
-            "analysisHistory",
-            JSON.stringify(updatedHistory)
-        );
+        // Optional: call backend delete endpoint here if it exists.
+        // fetch(`http://localhost:5000/api/patients/${id}`, { method: 'DELETE' });
 
         if (expandedId === id) {
             setExpandedId(null);
@@ -241,6 +312,10 @@ function History() {
                                 }
                             />
 
+                        ) : loading ? (
+                            <div className="flex justify-center p-10 text-slate-500">Loading history...</div>
+                        ) : error ? (
+                            <div className="flex justify-center p-10 text-red-500">Error loading history: {error}</div>
                         ) : filteredHistory.length === 0 ? (
 
                             <NoSearchResults />

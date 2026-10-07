@@ -11,12 +11,41 @@ import {
     HeartPulse,
     Pill,
     Info,
+    Server,
+    Users
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
 function About() {
+    const [stats, setStats] = useState({
+        systemVersion: "Loading...",
+        totalPatients: "...",
+        totalAssessments: "...",
+        status: "Checking...",
+        modelStatus: "..."
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/system/stats");
+                if (response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+                } else {
+                    setStats(prev => ({ ...prev, status: "Offline" }));
+                }
+            } catch (err) {
+                console.error("Error fetching stats:", err);
+                setStats(prev => ({ ...prev, status: "Offline" }));
+            }
+        };
+        fetchStats();
+    }, []);
+
     return (
         <div className="min-h-screen bg-slate-50">
 
@@ -111,6 +140,39 @@ function About() {
 
                             </div>
 
+                        </section>
+
+
+                        {/* ================================================= */}
+                        {/* SYSTEM STATUS */}
+                        {/* ================================================= */}
+
+                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <SectionHeader
+                                icon={<Server size={19} />}
+                                title="System Status"
+                                subtitle="Current real-time operational statistics of the MedRisk AI backend"
+                            />
+                            <div className="p-6 sm:p-8">
+                                <div className="grid gap-6 md:grid-cols-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Backend Status</span>
+                                        <span className={`mt-2 text-lg font-medium ${stats.status === "Online" ? "text-green-600" : "text-red-500"}`}>{stats.status}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Model Status</span>
+                                        <span className="mt-2 text-lg font-medium text-slate-800">{stats.modelStatus}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Patients</span>
+                                        <span className="mt-2 text-lg font-medium text-blue-600 flex items-center gap-2"><Users size={18} /> {stats.totalPatients}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Assessments</span>
+                                        <span className="mt-2 text-lg font-medium text-blue-600 flex items-center gap-2"><Activity size={18} /> {stats.totalAssessments}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </section>
 
 
