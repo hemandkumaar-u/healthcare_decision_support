@@ -280,9 +280,10 @@ function Dashboard() {
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    </div>
+
 
                                                 </td>
+
 
 
                                                 <td className="px-5 py-4 text-sm text-slate-600">

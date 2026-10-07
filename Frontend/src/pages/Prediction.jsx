@@ -1,11 +1,11 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from 'react-hot-toast';
-import { useReactToPrint } from 'react-to-print';
+// import { useReactToPrint } from 'react-to-print'; // Not used currently
 import {
     ArrowLeft,
     CheckCircle2,
-    XCircle,
+    // XCircle, // Unused icon
     AlertCircle,
     AlertTriangle,
     FileText,
@@ -31,18 +31,22 @@ function Prediction() {
 
     const { formData, files } = location.state || {};
 
+    // Redirect to input page if required data is missing (e.g., page refresh)
+    useEffect(() => {
+        if (!location.state?.formData) {
+            navigate('/patient/new');
+        }
+    }, [location.state, navigate]);
     const [showPrescription, setShowPrescription] = useState(false);
 
-    const [medications, setMedications] = useState([
-        {
-            id: Date.now(),
-            medication: "",
-            dosage: "",
-            frequency: "",
-            duration: "",
-            instructions: "",
-        },
-    ]);
+    const [medications, setMedications] = useState(() => [{
+        id: Date.now(),
+        medication: "",
+        dosage: "",
+        frequency: "",
+        duration: "",
+        instructions: "",
+    }]);
 
     const [saved, setSaved] = useState(false);
     const [sendingReport, setSendingReport] = useState(false);
@@ -54,30 +58,36 @@ function Prediction() {
     const handleDownloadPdf = async () => {
         try {
             setIsDownloading(true);
-            const response = await fetch('http://localhost:5000/api/patients/report/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: formData?.patientName || "Unknown Patient",
-                    patientData: {
-                        patientId: formData?.patientId,
-                        age: formData?.age,
-                        condition: formData?.condition,
-                        heartRate: formData?.heartRate,
-                        systolicBP: formData?.systolicBP,
-                        diastolicBP: formData?.diastolicBP,
-                        temperature: formData?.temperature,
-                        spo2: formData?.spo2
+            let response;
+            const patientId = formData?.patientId;
+            if (patientId) {
+                response = await fetch(`http://localhost:5000/api/patients/${patientId}/report.pdf`);
+            } else {
+                response = await fetch('http://localhost:5000/api/patients/report/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
                     },
-                    riskAssessment: {
-                        riskLevel: prediction?.label,
-                        explanation: `Risk class: ${prediction?.class}. Based on your health metrics.`,
-                        explanationDetails: [] // Optional: if you have explanation details
-                    }
-                })
-            });
+                    body: JSON.stringify({
+                        name: formData?.patientName || "Unknown Patient",
+                        patientData: {
+                            patientId: formData?.patientId,
+                            age: formData?.age,
+                            condition: formData?.condition,
+                            heartRate: formData?.heartRate,
+                            systolicBP: formData?.systolicBP,
+                            diastolicBP: formData?.diastolicBP,
+                            temperature: formData?.temperature,
+                            spo2: formData?.spo2
+                        },
+                        riskAssessment: {
+                            riskLevel: prediction?.label,
+                            explanation: `Risk class: ${prediction?.class}. Based on your health metrics.`,
+                            explanationDetails: [] // Optional: if you have explanation details
+                        }
+                    })
+                });
+            }
 
             if (!response.ok) {
                 throw new Error("Failed to download PDF");
@@ -87,7 +97,7 @@ function Prediction() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Assessment_Report_${(formData?.patientName || 'Patient').replace(/\s+/g, '_')}.pdf`;
+            a.download = `Assessment_Report_${(formData?.patientName || 'Patient').replace(/\\s+/g, '_')}.pdf`;
             document.body.appendChild(a);
             a.click();
             a.remove();
