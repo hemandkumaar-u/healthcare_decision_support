@@ -44,11 +44,6 @@ function Sidebar() {
             <div className="flex h-16 items-center border-b border-slate-200 px-5">
 
                 <div className="flex items-center gap-3">
-
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
-                        <Plus size={20} strokeWidth={2.4} />
-                    </div>
-
                     <div className="leading-tight">
                         <h1 className="text-sm font-semibold text-slate-900">
                             MedRisk AI

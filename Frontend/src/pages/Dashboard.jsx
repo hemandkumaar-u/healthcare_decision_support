@@ -2,8 +2,6 @@ import {
     Plus,
     ArrowRight,
     Clock3,
-    ShieldCheck,
-    Activity,
     FileText,
 } from "lucide-react";
 
@@ -100,10 +98,6 @@ function Dashboard() {
 
                                 <div>
 
-                                    <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                                        <Activity size={22} />
-                                    </div>
-
                                     <h2 className="text-lg font-semibold text-slate-900">
                                         Start a new analysis
                                     </h2>
@@ -141,11 +135,6 @@ function Dashboard() {
                         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
                             <div className="flex items-start gap-4">
-
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-500">
-                                    <ShieldCheck size={20} />
-                                </div>
-
                                 <div>
 
                                     <h2 className="text-sm font-semibold text-slate-900">
