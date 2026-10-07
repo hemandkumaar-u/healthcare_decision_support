@@ -26,6 +26,10 @@ function Login() {
 
         // Temporary frontend login
         // Backend authentication will replace this later.
+        localStorage.setItem("userEmail", formData.email);
+        const namePart = formData.email.split("@")[0];
+        localStorage.setItem("userName", namePart.charAt(0).toUpperCase() + namePart.slice(1));
+
         navigate("/dashboard");
     };
 

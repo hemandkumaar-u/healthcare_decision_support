@@ -71,11 +71,18 @@ function History() {
                     };
                 });
                 
-                setHistory(formattedHistory);
+                const localHistory = JSON.parse(localStorage.getItem("analysisHistory") || "[]");
+                
+                setHistory([...localHistory, ...formattedHistory]);
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching history:", err);
-                setError(err.message);
+                const localHistory = JSON.parse(localStorage.getItem("analysisHistory") || "[]");
+                if (localHistory.length > 0) {
+                    setHistory(localHistory);
+                } else {
+                    setError(err.message);
+                }
                 setLoading(false);
             }
         };
@@ -95,14 +102,15 @@ function History() {
     };
 
     const extractVital = (vitalSignsStr, key) => {
-        // Mock extraction, as vitalSigns might be a raw string from frontend
         if (!vitalSignsStr) return null;
-        // If vitalSigns was a stringified JSON, parse it:
         try {
             const vitals = JSON.parse(vitalSignsStr);
             return vitals[key];
         } catch {
-            return null; // fallback if it's just a regular string
+            // fallback if it's a regular string like "HR: 80, BP_SYS: 120"
+            const regex = new RegExp(`${key}:\\s*([\\d.]+)`);
+            const match = vitalSignsStr.match(regex);
+            return match ? match[1] : null;
         }
     };
 
@@ -164,6 +172,11 @@ function History() {
         );
 
         setHistory(updatedHistory);
+
+        // Also remove from localStorage if it's stored there
+        const localHistory = JSON.parse(localStorage.getItem("analysisHistory") || "[]");
+        const updatedLocalHistory = localHistory.filter(item => item.id !== id);
+        localStorage.setItem("analysisHistory", JSON.stringify(updatedLocalHistory));
 
         // Optional: call backend delete endpoint here if it exists.
         // fetch(`http://localhost:5000/api/patients/${id}`, { method: 'DELETE' });
@@ -713,96 +726,84 @@ function HistoryCard({
 
 
                         {/* Risk Timeline */}
-                        <DetailSection
-                            title="Risk Timeline"
-                            icon={<CalendarDays size={17} />}
-                        >
-                            <div className="relative border-l-2 border-slate-200 ml-3 pl-5 space-y-6">
-                                <div className="relative">
-                                    <div className={`absolute -left-[27px] mt-1 h-3 w-3 rounded-full ${risk.bg} ring-4 ring-white border ${risk.border}`}></div>
-                                    <p className="text-xs font-semibold text-slate-500">{formatDate(analysis.createdAt)} (Current)</p>
-                                    <p className={`text-sm font-bold mt-0.5 ${risk.textColor}`}>Class {analysis.prediction?.class ?? "—"} • {analysis.prediction?.label || risk.label}</p>
+                        <div className="col-span-1 lg:col-span-2">
+                            <DetailSection
+                                title="Risk Timeline"
+                                icon={<CalendarDays size={17} />}
+                            >
+                                <div className="relative mt-12 mb-6 px-4">
+                                    <div className="absolute top-1/2 left-4 right-4 h-1.5 -translate-y-1/2 bg-slate-100 rounded-full"></div>
+                                    
+                                    <div className="relative flex justify-between items-center">
+                                        <div className="flex flex-col items-center group cursor-pointer">
+                                            <div className="h-5 w-5 rounded-full bg-emerald-400 ring-4 ring-white shadow-sm z-10 transition-transform group-hover:scale-125"></div>
+                                            <p className="mt-4 text-[11px] font-semibold text-slate-400">Sep 2026</p>
+                                        </div>
+                                        
+                                        <div className="flex flex-col items-center group cursor-pointer">
+                                            <div className="h-5 w-5 rounded-full bg-emerald-400 ring-4 ring-white shadow-sm z-10 transition-transform group-hover:scale-125"></div>
+                                            <p className="mt-4 text-[11px] font-semibold text-slate-400">Oct 01</p>
+                                        </div>
+                                        
+                                        <div className="flex flex-col items-center group cursor-pointer">
+                                            <div className="h-5 w-5 rounded-full bg-amber-400 ring-4 ring-white shadow-sm z-10 transition-transform group-hover:scale-125"></div>
+                                            <p className="mt-4 text-[11px] font-semibold text-slate-400">Oct 04</p>
+                                        </div>
+                                        
+                                        <div className="flex flex-col items-center group cursor-pointer relative">
+                                            <div className={`h-7 w-7 rounded-full ${risk.bg.replace('-50', '-500')} ring-[6px] ring-blue-50 shadow-md z-10 transition-transform group-hover:scale-110 flex items-center justify-center`}>
+                                                <div className="h-2.5 w-2.5 rounded-full bg-white"></div>
+                                            </div>
+                                            <p className="mt-3 text-xs font-bold text-slate-800">Current</p>
+                                            
+                                            {/* Hover Card */}
+                                            <div className="absolute bottom-full mb-4 w-48 p-4 bg-white border border-slate-200 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{formatDate(analysis.createdAt)}</p>
+                                                <p className={`text-sm font-bold mt-1 ${risk.textColor}`}>Class {analysis.prediction?.class ?? "—"} • {analysis.prediction?.label || risk.label}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="relative">
-                                    <div className="absolute -left-[27px] mt-1 h-3 w-3 rounded-full bg-orange-100 ring-4 ring-white border border-orange-400"></div>
-                                    <p className="text-xs font-semibold text-slate-500">04 Oct 2026, 09:15 AM</p>
-                                    <p className="text-sm font-bold mt-0.5 text-orange-600">Class 2 • Moderate</p>
-                                </div>
-                                <div className="relative">
-                                    <div className="absolute -left-[27px] mt-1 h-3 w-3 rounded-full bg-green-100 ring-4 ring-white border border-green-400"></div>
-                                    <p className="text-xs font-semibold text-slate-500">01 Oct 2026, 14:30 PM</p>
-                                    <p className="text-sm font-bold mt-0.5 text-green-600">Class 0 • Normal</p>
-                                </div>
-                            </div>
-                        </DetailSection>
+                            </DetailSection>
+                        </div>
 
                         {/* Vital signs */}
 
-                        <DetailSection
-                            title="Recorded Vital Signs"
-                            icon={
-                                <Activity size={17} />
-                            }
-                        >
-
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-
-                                <SmallValue
-                                    label="Heart rate"
-                                    value={
-                                        analysis.input
-                                            ?.heartRate
-                                    }
-                                    unit="bpm"
-                                />
-
-                                <SmallValue
-                                    label="Systolic BP"
-                                    value={
-                                        analysis.input
-                                            ?.systolicBP
-                                    }
-                                    unit="mmHg"
-                                />
-
-                                <SmallValue
-                                    label="Diastolic BP"
-                                    value={
-                                        analysis.input
-                                            ?.diastolicBP
-                                    }
-                                    unit="mmHg"
-                                />
-
-                                <SmallValue
-                                    label="Temperature"
-                                    value={
-                                        analysis.input
-                                            ?.temperature
-                                    }
-                                    unit="°C"
-                                />
-
-                                <SmallValue
-                                    label="SpO₂"
-                                    value={
-                                        analysis.input?.spo2
-                                    }
-                                    unit="%"
-                                />
-
-                                <SmallValue
-                                    label="Respiratory rate"
-                                    value={
-                                        analysis.input
-                                            ?.respiratoryRate
-                                    }
-                                    unit="/min"
-                                />
-
-                            </div>
-
-                        </DetailSection>
+                        <div className="col-span-1 lg:col-span-2">
+                            <DetailSection
+                                title="Recorded Vital Signs"
+                                icon={
+                                    <Activity size={17} />
+                                }
+                            >
+                                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                                    <VitalCard
+                                        label="Heart Rate"
+                                        value={analysis.input?.heartRate}
+                                        unit="bpm"
+                                        colorClass="bg-emerald-500"
+                                    />
+                                    <VitalCard
+                                        label="Blood Pressure"
+                                        value={`${analysis.input?.systolicBP || "—"}/${analysis.input?.diastolicBP || "—"}`}
+                                        unit="mmHg"
+                                        colorClass="bg-amber-500"
+                                    />
+                                    <VitalCard
+                                        label="Temperature"
+                                        value={analysis.input?.temperature}
+                                        unit="°C"
+                                        colorClass="bg-blue-500"
+                                    />
+                                    <VitalCard
+                                        label="SpO₂"
+                                        value={analysis.input?.spo2}
+                                        unit="%"
+                                        colorClass="bg-emerald-500"
+                                    />
+                                </div>
+                            </DetailSection>
+                        </div>
 
 
                         {/* Data */}
@@ -1220,30 +1221,40 @@ function DetailValue({ label, value }) {
 
 /*
  * =========================================================
- * SMALL VALUE
+ * VITAL CARD (Glassmorphic Mockup)
  * =========================================================
  */
 
-function SmallValue({
+function VitalCard({
     label,
     value,
     unit,
+    colorClass
 }) {
+    // Generate a pseudo-random sparkline pattern based on label
+    const points = useMemo(() => Array.from({length: 12}, () => Math.floor(Math.random() * 40) + 20), [label]);
+
     return (
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-
-            <p className="text-[11px] text-slate-400">
-                {label}
-            </p>
-
-            <p className="mt-1 text-sm font-semibold text-slate-800">
-                {value || "—"}
-            </p>
-
-            <p className="mt-0.5 text-[11px] text-slate-400">
-                {unit}
-            </p>
-
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/60 p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] backdrop-blur-xl transition hover:shadow-lg">
+            <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-700">{label}</p>
+                <div className={`h-2 w-2 rounded-full ${colorClass} shadow-sm ring-2 ring-white`}></div>
+            </div>
+            
+            <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold tracking-tight text-slate-900">{value || "—"}</span>
+                <span className="text-sm font-medium text-slate-400">{unit}</span>
+            </div>
+            
+            <div className="mt-6 flex h-8 items-end gap-1 opacity-60">
+                {points.map((p, i) => (
+                    <div 
+                        key={i} 
+                        className={`flex-1 rounded-t-sm ${colorClass.replace('bg-', 'bg-').replace('-500', '-300')}`} 
+                        style={{ height: `${p}%`, opacity: 0.5 + (i * 0.05) }}
+                    ></div>
+                ))}
+            </div>
         </div>
     );
 }

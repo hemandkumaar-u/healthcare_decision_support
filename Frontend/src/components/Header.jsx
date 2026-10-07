@@ -1,6 +1,20 @@
 import { Bell, UserCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 
 function Header() {
+    const [userName, setUserName] = useState("Doctor");
+    const [userRole, setUserRole] = useState("Healthcare Professional");
+
+    useEffect(() => {
+        const storedName = localStorage.getItem("userName");
+        const storedEmail = localStorage.getItem("userEmail");
+        if (storedName) {
+            setUserName(storedName);
+        }
+        if (storedEmail) {
+            setUserRole(storedEmail);
+        }
+    }, []);
     return (
         <header className="sticky top-0 z-30 h-16 border-b border-slate-200 bg-white/95 backdrop-blur">
 
@@ -42,11 +56,11 @@ function Header() {
 
                         <div className="hidden text-left sm:block">
                             <p className="text-xs font-medium text-slate-800">
-                                Doctor
+                                {userName}
                             </p>
 
                             <p className="text-[11px] text-slate-400">
-                                Healthcare Professional
+                                {userRole}
                             </p>
                         </div>
 

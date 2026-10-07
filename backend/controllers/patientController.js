@@ -120,6 +120,7 @@ exports.sendReport = async (req, res) => {
 
     const email = (patient && patient.email) ? patient.email : req.body.email;
     const name = (patient && patient.name) ? patient.name : req.body.name;
+    const patientData = req.body.patientData || {};
     const assessment = (patient && patient.riskAssessment) ? patient.riskAssessment : (req.body.riskAssessment || {});
     
     if (!email) {
@@ -143,7 +144,7 @@ exports.sendReport = async (req, res) => {
     });
     
     const { generateReportHtml } = require('../utils/reportTemplate');
-    const htmlContent = generateReportHtml(patient, name, assessment);
+    const htmlContent = generateReportHtml(patient, name, assessment, patientData);
 
     let pdfBuffer = null;
     try {

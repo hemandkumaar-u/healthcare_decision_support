@@ -45,12 +45,27 @@ function PatientInput() {
     const [errors, setErrors] = useState({});
 
     const conditions = [
-        "Pneumonia",
-        "Heart Attack",
+        "Acute Appendicitis",
+        "Acute Kidney Injury",
+        "Acute Myocardial Infarction",
+        "Alcohol Related",
+        "Back Pain",
+        "Cerebral Infarction",
+        "Chest Pain NOS",
+        "Cholelithiasis",
+        "COPD Exacerbation",
+        "Dyspnea",
+        "Fracture Forearm",
+        "GI Hemorrhage",
+        "Hypertensive Crisis",
+        "Intracranial Injury",
+        "Other/Not Coded",
+        "Pneumonia Unspecified",
+        "Poisoning Non-Opioid Analgesics",
+        "Pulmonary Embolism",
         "Sepsis",
-        "Dengue",
-        "Malaria",
-        "Cancer",
+        "Stroke not specified",
+        "Type 2 Diabetes Complication",
     ];
 
     const handleChange = (event) => {
@@ -158,11 +173,17 @@ function PatientInput() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 relative overflow-hidden flex flex-col lg:flex-row">
+
+            {/* Background elements */}
+            <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+                <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-blue-200/20 blur-[100px]" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-200/20 blur-[100px]" />
+            </div>
 
             <Sidebar />
 
-            <div className="lg:pl-64">
+            <div className="lg:pl-64 flex-1 relative z-10 w-full">
 
                 <Header />
 
@@ -181,20 +202,20 @@ function PatientInput() {
                         </button>
 
                         {/* Page heading */}
-                        <div className="mb-7">
+                        <div className="mb-8">
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
 
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                                    <Activity size={21} />
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 shadow-sm ring-1 ring-blue-100/50">
+                                    <Activity size={24} />
                                 </div>
 
                                 <div>
-                                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-['Inter']">
                                         New Patient Analysis
                                     </h1>
 
-                                    <p className="mt-1 text-sm text-slate-500">
+                                    <p className="mt-1 text-sm font-medium text-slate-500 font-['Roboto']">
                                         Enter the available patient information for risk assessment.
                                     </p>
                                 </div>
@@ -209,22 +230,24 @@ function PatientInput() {
                             {/* CONDITION */}
                             {/* ================================================= */}
 
-                            <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
 
-                                <div className="border-b border-slate-100 px-6 py-5">
+                                <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-gradient-to-bl from-amber-200 to-orange-300 opacity-10 blur-3xl pointer-events-none"></div>
 
-                                    <div className="flex items-center gap-3">
+                                <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                            <ClipboardList size={19} />
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 text-amber-600">
+                                            <ClipboardList size={22} />
                                         </div>
 
                                         <div>
-                                            <h2 className="text-base font-semibold text-slate-900">
+                                            <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
                                                 Assessment
                                             </h2>
 
-                                            <p className="mt-0.5 text-xs text-slate-500">
+                                            <p className="mt-1 text-sm font-medium text-slate-500 font-['Roboto']">
                                                 Select the health condition to assess.
                                             </p>
                                         </div>
@@ -233,11 +256,11 @@ function PatientInput() {
 
                                 </div>
 
-                                <div className="p-6">
+                                <div className="relative z-10 p-7">
 
                                     <label
                                         htmlFor="condition"
-                                        className="mb-2 block text-sm font-medium text-slate-700"
+                                        className="mb-2 block text-sm font-semibold text-slate-700 font-['Inter']"
                                     >
                                         Health condition
                                         <span className="ml-1 text-red-500">
@@ -250,10 +273,10 @@ function PatientInput() {
                                         name="condition"
                                         value={formData.condition}
                                         onChange={handleChange}
-                                        className={`w-full rounded-lg border bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition ${
+                                        className={`w-full rounded-2xl border bg-white/50 px-4 py-3.5 text-sm font-medium text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all font-['Roboto'] ${
                                             errors.condition
-                                                ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                                                : "border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 bg-red-50/50"
+                                                : "border-slate-200/60 hover:bg-white/80 focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10"
                                         }`}
                                     >
                                         <option value="">
@@ -285,22 +308,24 @@ function PatientInput() {
                             {/* PATIENT INFORMATION */}
                             {/* ================================================= */}
 
-                            <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
 
-                                <div className="border-b border-slate-100 px-6 py-5">
+                                <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-gradient-to-bl from-blue-200 to-indigo-300 opacity-10 blur-3xl pointer-events-none"></div>
 
-                                    <div className="flex items-center gap-3">
+                                <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                            <User size={19} />
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 text-indigo-600">
+                                            <User size={22} />
                                         </div>
 
                                         <div>
-                                            <h2 className="text-base font-semibold text-slate-900">
+                                            <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
                                                 Patient Information
                                             </h2>
 
-                                            <p className="mt-0.5 text-xs text-slate-500">
+                                            <p className="mt-1 text-sm font-medium text-slate-500 font-['Roboto']">
                                                 Basic information about the patient.
                                             </p>
                                         </div>
@@ -309,7 +334,7 @@ function PatientInput() {
 
                                 </div>
 
-                                <div className="grid gap-5 p-6 md:grid-cols-2">
+                                <div className="relative z-10 grid gap-6 p-7 md:grid-cols-2">
 
                                     <InputField
                                         label="Patient name"
@@ -366,7 +391,7 @@ function PatientInput() {
 
                                         <label
                                             htmlFor="gender"
-                                            className="mb-2 block text-sm font-medium text-slate-700"
+                                            className="mb-2 block text-sm font-semibold text-slate-700 font-['Inter']"
                                         >
                                             Gender
                                             <span className="ml-1 text-red-500">
@@ -379,10 +404,10 @@ function PatientInput() {
                                             name="gender"
                                             value={formData.gender}
                                             onChange={handleChange}
-                                            className={`w-full rounded-lg border bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition ${
+                                            className={`w-full rounded-2xl border bg-white/50 px-4 py-3.5 text-sm font-medium text-slate-900 shadow-sm outline-none backdrop-blur-sm transition-all font-['Roboto'] ${
                                                 errors.gender
-                                                    ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                                                    : "border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 bg-red-50/50"
+                                                    : "border-slate-200/60 hover:bg-white/80 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                                             }`}
                                         >
                                             <option value="">
@@ -416,22 +441,24 @@ function PatientInput() {
                             {/* VITAL SIGNS */}
                             {/* ================================================= */}
 
-                            <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
 
-                                <div className="border-b border-slate-100 px-6 py-5">
+                                <div className="absolute top-0 left-0 h-64 w-64 rounded-full bg-gradient-to-br from-pink-200 to-rose-300 opacity-10 blur-3xl pointer-events-none"></div>
 
-                                    <div className="flex items-center gap-3">
+                                <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
-                                            <HeartPulse size={19} />
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 text-pink-600">
+                                            <HeartPulse size={22} />
                                         </div>
 
                                         <div>
-                                            <h2 className="text-base font-semibold text-slate-900">
+                                            <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
                                                 Vital Signs
                                             </h2>
 
-                                            <p className="mt-0.5 text-xs text-slate-500">
+                                            <p className="mt-1 text-sm font-medium text-slate-500 font-['Roboto']">
                                                 Enter the patient's current vital measurements.
                                             </p>
                                         </div>
@@ -440,7 +467,7 @@ function PatientInput() {
 
                                 </div>
 
-                                <div className="grid gap-5 p-6 sm:grid-cols-2 lg:grid-cols-3">
+                                <div className="relative z-10 grid gap-6 p-7 sm:grid-cols-2 lg:grid-cols-3">
 
                                     <InputField
                                         label="Heart rate"
@@ -524,22 +551,24 @@ function PatientInput() {
                             {/* CLINICAL FILES */}
                             {/* ================================================= */}
 
-                            <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
 
-                                <div className="border-b border-slate-100 px-6 py-5">
+                                <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-gradient-to-tl from-emerald-200 to-teal-300 opacity-10 blur-3xl pointer-events-none"></div>
 
-                                    <div className="flex items-center gap-3">
+                                <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                                            <FileText size={19} />
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 text-emerald-600">
+                                            <FileText size={22} />
                                         </div>
 
                                         <div>
-                                            <h2 className="text-base font-semibold text-slate-900">
+                                            <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
                                                 Clinical Information
                                             </h2>
 
-                                            <p className="mt-0.5 text-xs text-slate-500">
+                                            <p className="mt-1 text-sm font-medium text-slate-500 font-['Roboto']">
                                                 Upload additional patient information when available.
                                             </p>
                                         </div>
@@ -548,7 +577,7 @@ function PatientInput() {
 
                                 </div>
 
-                                <div className="space-y-6 p-6">
+                                <div className="relative z-10 space-y-7 p-7">
 
                                     <FileUpload
                                         label="Laboratory values"
@@ -601,15 +630,15 @@ function PatientInput() {
                                         }
                                     />
 
-                                    <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                                    <div className="flex items-start gap-4 rounded-2xl border border-indigo-200/60 bg-indigo-50/50 p-5 backdrop-blur-sm">
 
                                         <Upload
-                                            size={17}
-                                            className="mt-0.5 shrink-0 text-slate-500"
+                                            size={20}
+                                            className="mt-0.5 shrink-0 text-indigo-500"
                                         />
 
-                                        <p className="text-xs leading-5 text-slate-500">
-                                            Clinical files are optional. If information
+                                        <p className="text-sm leading-relaxed text-indigo-900 font-['Roboto']">
+                                            <strong>Clinical files are optional.</strong> If information
                                             is unavailable, the system will identify
                                             the missing data during the assessment.
                                         </p>
@@ -625,21 +654,21 @@ function PatientInput() {
                             {/* ACTIONS */}
                             {/* ================================================= */}
 
-                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                            <div className="mt-8 flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
 
                                 <button
                                     type="button"
                                     onClick={() =>
                                         navigate("/dashboard")
                                     }
-                                    className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                                    className="rounded-2xl border border-slate-200 bg-white/80 px-8 py-4 text-sm font-bold text-slate-700 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-50 hover:shadow"
                                 >
                                     Cancel
                                 </button>
 
                                 <button
                                     type="submit"
-                                    className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                 >
                                     Predict Risk
                                 </button>
@@ -647,7 +676,7 @@ function PatientInput() {
                             </div>
 
                             {/* Disclaimer */}
-                            <p className="mt-5 text-center text-xs leading-5 text-slate-400">
+                            <p className="mt-6 text-center text-xs leading-5 text-slate-400 font-['Roboto']">
                                 This assessment is intended for research and
                                 educational decision-support purposes and does not
                                 replace professional medical judgment.

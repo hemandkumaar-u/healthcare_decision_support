@@ -52,7 +52,7 @@ function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
 
             <Sidebar />
 
@@ -64,17 +64,17 @@ function Dashboard() {
                 <main className="mx-auto max-w-7xl px-5 py-7 sm:px-7 lg:px-8">
 
                     {/* Welcome */}
-                    <section className="mb-7">
+                    <section className="mb-8">
 
-                        <p className="mb-1 text-sm font-medium text-blue-600">
-                            Welcome back
+                        <p className="mb-1 text-sm font-semibold tracking-wide text-indigo-600 uppercase font-['Roboto']">
+                            Overview
                         </p>
 
-                        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl font-['Inter'] drop-shadow-sm">
                             Patient Risk Assessment
                         </h1>
 
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                        <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 font-['Roboto']">
                             Analyze patient information and identify elevated
                             risk for a selected health condition.
                         </p>
@@ -83,20 +83,23 @@ function Dashboard() {
 
 
                     {/* Main action cards */}
-                    <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+                    <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
 
                         {/* New analysis */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 opacity-20 blur-2xl"></div>
 
-                            <div className="flex h-full flex-col justify-between">
+                            <div className="relative z-10 flex h-full flex-col justify-between">
 
                                 <div>
-
-                                    <h2 className="text-lg font-semibold text-slate-900">
+                                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30">
+                                        <Plus size={24} />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
                                         Start a new analysis
                                     </h2>
 
-                                    <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">
+                                    <p className="mt-3 max-w-lg text-sm leading-relaxed text-slate-600 font-['Roboto']">
                                         Enter patient information, upload
                                         clinical data, select a health
                                         condition and generate a risk
@@ -108,7 +111,7 @@ function Dashboard() {
 
                                 <button
                                     onClick={() => navigate("/patient/new")}
-                                    className="mt-7 flex w-fit items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className="group mt-8 flex w-fit items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-900/20 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
                                 >
                                     <Plus size={17} />
 
@@ -126,16 +129,17 @@ function Dashboard() {
 
 
                         {/* System information */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 opacity-20 blur-2xl"></div>
 
-                            <div className="flex items-start gap-4">
+                            <div className="relative z-10 flex items-start gap-4">
                                 <div>
 
-                                    <h2 className="text-sm font-semibold text-slate-900">
+                                    <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                         Decision Support
                                     </h2>
 
-                                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-600 font-['Roboto']">
                                         The system analyzes available patient
                                         information and provides a model-based
                                         risk assessment for the selected
@@ -162,56 +166,55 @@ function Dashboard() {
 
 
                     {/* Recent analyses */}
-                    <section className="mt-7">
+                    <section className="mt-10">
 
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-5 flex items-center justify-between">
 
                             <div>
-                                <h2 className="text-base font-semibold text-slate-900">
+                                <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
                                     Recent analyses
                                 </h2>
 
-                                <p className="mt-1 text-xs text-slate-500">
+                                <p className="mt-1 text-sm text-slate-500 font-['Roboto']">
                                     Recently completed patient assessments
                                 </p>
                             </div>
 
                             <button
                                 onClick={() => navigate("/history")}
-                                className="flex items-center gap-1.5 text-sm font-medium text-blue-600 transition hover:text-blue-700"
+                                className="group flex items-center gap-1.5 rounded-full bg-white/60 px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-100 backdrop-blur-sm transition-all hover:bg-white hover:shadow-md"
                             >
                                 View history
-
-                                <ArrowRight size={15} />
+                                <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                             </button>
 
                         </div>
 
 
-                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="overflow-hidden rounded-3xl border border-white/60 bg-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl">
 
                             {/* Desktop table */}
                             <div className="hidden overflow-x-auto md:block">
 
-                                <table className="w-full text-left">
+                                <table className="w-full text-left border-collapse">
 
-                                    <thead className="border-b border-slate-100 bg-slate-50/70">
+                                    <thead className="bg-slate-900/5 backdrop-blur-md">
 
                                         <tr>
 
-                                            <th className="px-5 py-3.5 text-xs font-semibold text-slate-500">
+                                            <th className="px-6 py-4 text-xs font-bold tracking-wider text-slate-500 uppercase font-['Inter']">
                                                 Patient
                                             </th>
 
-                                            <th className="px-5 py-3.5 text-xs font-semibold text-slate-500">
+                                            <th className="px-6 py-4 text-xs font-bold tracking-wider text-slate-500 uppercase font-['Inter']">
                                                 Condition
                                             </th>
 
-                                            <th className="px-5 py-3.5 text-xs font-semibold text-slate-500">
+                                            <th className="px-6 py-4 text-xs font-bold tracking-wider text-slate-500 uppercase font-['Inter']">
                                                 Risk
                                             </th>
 
-                                            <th className="px-5 py-3.5 text-xs font-semibold text-slate-500">
+                                            <th className="px-6 py-4 text-xs font-bold tracking-wider text-slate-500 uppercase font-['Inter']">
                                                 Date
                                             </th>
 
@@ -220,21 +223,26 @@ function Dashboard() {
                                     </thead>
 
 
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-white/50">
 
                                         {recentAnalyses.map((item) => (
 
                                             <tr
                                                 key={item.id}
-                                                className="transition hover:bg-slate-50"
+                                                className="transition-colors hover:bg-white/60 group cursor-pointer"
+                                                onClick={() => navigate("/history")}
                                             >
 
-                                                <td className="px-5 py-4">
+                                                <td className="px-6 py-5">
 
-                                                    <div>
-                                                        <p className="text-sm font-medium text-slate-800">
-                                                            {item.patient}
-                                                        </p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 text-indigo-700 font-bold shadow-inner">
+                                                            {item.patient.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                                                {item.patient}
+                                                            </p>
 
                                                         <p className="mt-0.5 text-xs text-slate-400">
                                                             {item.id}
