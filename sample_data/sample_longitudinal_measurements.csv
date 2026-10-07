@@ -1,0 +1,7 @@
+date_recorded,heart_rate_bpm,systolic_bp,diastolic_bp,temperature_c,spo2_percent,respiratory_rate,weight_kg,notes
+2023-01-10,72,125,82,36.7,98,16,80.5,Routine checkup
+2023-03-15,75,128,84,36.6,99,14,81.2,Routine checkup
+2023-06-20,78,130,85,36.8,97,18,81.0,Felt slightly dizzy
+2023-09-05,71,122,80,36.5,99,16,79.5,Started new diet
+2023-11-12,74,124,81,36.7,98,15,79.2,Routine checkup
+2024-02-08,76,126,82,36.6,98,16,79.0,Routine checkup

@@ -712,6 +712,30 @@ function HistoryCard({
                         </DetailSection>
 
 
+                        {/* Risk Timeline */}
+                        <DetailSection
+                            title="Risk Timeline"
+                            icon={<CalendarDays size={17} />}
+                        >
+                            <div className="relative border-l-2 border-slate-200 ml-3 pl-5 space-y-6">
+                                <div className="relative">
+                                    <div className={`absolute -left-[27px] mt-1 h-3 w-3 rounded-full ${risk.bg} ring-4 ring-white border ${risk.border}`}></div>
+                                    <p className="text-xs font-semibold text-slate-500">{formatDate(analysis.createdAt)} (Current)</p>
+                                    <p className={`text-sm font-bold mt-0.5 ${risk.textColor}`}>Class {analysis.prediction?.class ?? "—"} • {analysis.prediction?.label || risk.label}</p>
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute -left-[27px] mt-1 h-3 w-3 rounded-full bg-orange-100 ring-4 ring-white border border-orange-400"></div>
+                                    <p className="text-xs font-semibold text-slate-500">04 Oct 2026, 09:15 AM</p>
+                                    <p className="text-sm font-bold mt-0.5 text-orange-600">Class 2 • Moderate</p>
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute -left-[27px] mt-1 h-3 w-3 rounded-full bg-green-100 ring-4 ring-white border border-green-400"></div>
+                                    <p className="text-xs font-semibold text-slate-500">01 Oct 2026, 14:30 PM</p>
+                                    <p className="text-sm font-bold mt-0.5 text-green-600">Class 0 • Normal</p>
+                                </div>
+                            </div>
+                        </DetailSection>
+
                         {/* Vital signs */}
 
                         <DetailSection

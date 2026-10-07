@@ -7,9 +7,12 @@ import Prediction from "./pages/Prediction";
 import History from "./pages/History";
 import About from "./pages/About";
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
 

@@ -23,6 +23,7 @@ function PatientInput() {
 
         patientName: "",
         patientId: "",
+        email: "",
         mobile: "",
         age: "",
         gender: "",
@@ -328,6 +329,15 @@ function PatientInput() {
                                         placeholder="Enter patient ID"
                                         required
                                         error={errors.patientId}
+                                    />
+
+                                    <InputField
+                                        label="Email address"
+                                        name="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="Enter email for reports"
                                     />
 
                                     <InputField
