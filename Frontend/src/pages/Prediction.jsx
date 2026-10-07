@@ -66,7 +66,17 @@ function Prediction() {
         if (hasPatientDetails) passedChecks++;
         details.push({ name: 'Patient details', present: hasPatientDetails });
         
-        const hasVitals = !!(formData.heartRate || formData.systolicBp || formData.diastolicBp || formData.temperature || formData.oxygenSaturation);
+        const hasVitals = !!(
+            formData.heartRate ||
+            formData.systolicBP ||
+            formData.systolicBp ||
+            formData.diastolicBP ||
+            formData.diastolicBp ||
+            formData.temperature ||
+            formData.spo2 ||
+            formData.oxygenSaturation ||
+            formData.respiratoryRate
+        );
         if (hasVitals) passedChecks++;
         details.push({ name: 'Vital signs', present: hasVitals });
         
@@ -145,6 +155,34 @@ function Prediction() {
                 percentage: temp > 39.0 ? 70 : 45,
                 direction: temp > 37 ? "HIGHER" : "LOWER",
                 normal_median: 37.0
+            });
+        }
+
+        // Blood Pressure checks
+        const sysBP = Number(formData?.systolicBP || formData?.systolicBp);
+        if (sysBP && (sysBP > 140 || sysBP < 90)) {
+            baseRisk = Math.max(baseRisk, sysBP >= 180 || sysBP <= 80 ? 4 : (sysBP >= 160 ? 3 : 2));
+            explanationDetails.push({
+                feature: "Systolic BP",
+                value: `${sysBP} mmHg`,
+                contribution: sysBP >= 180 || sysBP <= 80 ? "Critical contribution" : (sysBP >= 160 ? "High contribution" : "Moderate contribution"),
+                percentage: sysBP >= 180 || sysBP <= 80 ? 90 : (sysBP >= 160 ? 75 : 55),
+                direction: sysBP > 120 ? "HIGHER" : "LOWER",
+                normal_median: 120
+            });
+        }
+
+        // Respiratory Rate checks
+        const rr = Number(formData?.respiratoryRate);
+        if (rr && (rr > 22 || rr < 12)) {
+            baseRisk = Math.max(baseRisk, rr >= 30 || rr <= 8 ? 4 : (rr >= 24 ? 3 : 2));
+            explanationDetails.push({
+                feature: "Respiratory Rate",
+                value: `${rr} /min`,
+                contribution: rr >= 30 || rr <= 8 ? "Critical contribution" : (rr >= 24 ? "High contribution" : "Moderate contribution"),
+                percentage: rr >= 30 || rr <= 8 ? 85 : (rr >= 24 ? 70 : 50),
+                direction: rr > 16 ? "HIGHER" : "LOWER",
+                normal_median: 16
             });
         }
 
@@ -354,7 +392,7 @@ function Prediction() {
 
         if (
             showPrescription &&
-            !formData.mobile?.trim()
+            !formData?.mobile?.trim()
         ) {
             alert(
                 "A mobile number is required when providing a prescription."
@@ -390,23 +428,23 @@ function Prediction() {
             id: `AN-${Date.now()}`,
 
             patient: {
-                name: formData.patientName,
-                patientId: formData.patientId,
-                mobile: formData.mobile || "",
-                age: formData.age,
-                gender: formData.gender,
+                name: formData?.patientName || "",
+                patientId: formData?.patientId || "",
+                mobile: formData?.mobile || "",
+                age: formData?.age || "",
+                gender: formData?.gender || "",
             },
 
-            condition: formData.condition,
+            condition: formData?.condition || "",
 
             input: {
-                heartRate: formData.heartRate,
-                systolicBP: formData.systolicBP,
-                diastolicBP: formData.diastolicBP,
-                temperature: formData.temperature,
-                spo2: formData.spo2,
+                heartRate: formData?.heartRate || "",
+                systolicBP: formData?.systolicBP || formData?.systolicBp || "",
+                diastolicBP: formData?.diastolicBP || formData?.diastolicBp || "",
+                temperature: formData?.temperature || "",
+                spo2: formData?.spo2 || "",
                 respiratoryRate:
-                    formData.respiratoryRate,
+                    formData?.respiratoryRate || "",
             },
 
             prediction: {
@@ -525,6 +563,7 @@ function Prediction() {
      * =========================================================
      */
      
+    if (!formData) {
         return (
             <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
                 <Sidebar />
@@ -1482,8 +1521,8 @@ function Prediction() {
 
         </div>
     );
-}
 
+}
 
 /*
  * =========================================================
