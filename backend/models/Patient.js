@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const PatientSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  email: { type: String },
   age: { type: Number, required: true },
   vitalSigns: { type: String },
   laboratoryValues: [{ type: String }], // Array of file paths/URLs (jpg, png, pdf, excel, word)
