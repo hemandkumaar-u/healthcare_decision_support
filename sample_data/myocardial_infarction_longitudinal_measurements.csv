@@ -1,0 +1,7 @@
+date_recorded,heart_rate_bpm,systolic_bp,diastolic_bp,temperature_c,spo2_percent,respiratory_rate,weight_kg,notes
+2024-01-15,72,132,84,36.6,98,16,86.0,Routine outpatient follow-up; mild hypertension
+2024-02-20,78,142,88,36.5,98,16,86.5,Reports occasional exertional chest tightness with heavy walking
+2024-03-10,84,158,94,36.7,97,18,87.0,Substernal discomfort occurring with less exertion; stressed at work
+2024-03-14 06:00,92,168,98,36.8,96,20,87.0,Early morning substernal pressure, diaphoresis; took sublingual aspirin
+2024-03-14 08:30,112,185,105,37.1,94,24,87.0,Severe crushing retrosternal pain radiating to left jaw and shoulder
+2024-03-14 09:15,124,104,68,36.4,91,28,87.0,Acute decompensation, diaphoresis, pallor, hypotension, cardiogenic distress
