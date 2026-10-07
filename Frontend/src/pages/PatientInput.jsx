@@ -173,17 +173,10 @@ function PatientInput() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 relative overflow-hidden flex flex-col lg:flex-row">
-
-            {/* Background elements */}
-            <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-                <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-blue-200/20 blur-[100px]" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-200/20 blur-[100px]" />
-            </div>
-
+        <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
             <Sidebar />
 
-            <div className="lg:pl-64 flex-1 relative z-10 w-full">
+            <div className="lg:pl-64">
 
                 <Header />
 

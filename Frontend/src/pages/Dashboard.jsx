@@ -3,6 +3,9 @@ import {
     ArrowRight,
     Clock3,
     FileText,
+    Activity,
+    Users,
+    Server
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
@@ -14,9 +17,16 @@ import axios from "axios";
 function Dashboard() {
     const navigate = useNavigate();
     const [recentAnalyses, setRecentAnalyses] = useState([]);
+    const [stats, setStats] = useState({
+        systemVersion: "...",
+        totalPatients: "...",
+        totalAssessments: "...",
+        status: "Checking...",
+        modelStatus: "..."
+    });
 
     useEffect(() => {
-        const fetchPatients = async () => {
+        const fetchData = async () => {
             try {
                 const response = await axios.get("http://localhost:5000/api/patients");
                 const formattedData = response.data.map(patient => ({
@@ -31,8 +41,16 @@ function Dashboard() {
             } catch (error) {
                 console.error("Error fetching analyses:", error);
             }
+
+            try {
+                const statsResponse = await axios.get("http://localhost:5000/api/system/stats");
+                setStats(statsResponse.data);
+            } catch (error) {
+                console.error("Error fetching stats:", error);
+                setStats(prev => ({ ...prev, status: "Offline" }));
+            }
         };
-        fetchPatients();
+        fetchData();
     }, []);
 
     const getRiskStyle = (level) => {
@@ -129,37 +147,50 @@ function Dashboard() {
 
 
                         {/* System information */}
-                        <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                        <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl flex flex-col justify-between">
                             <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 opacity-20 blur-2xl"></div>
 
-                            <div className="relative z-10 flex items-start gap-4">
-                                <div>
-
-                                    <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
-                                        Decision Support
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-teal-500/30">
+                                        <Server size={20} />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-slate-900 font-['Inter']">
+                                        System Status
                                     </h2>
-
-                                    <p className="mt-3 text-sm leading-relaxed text-slate-600 font-['Roboto']">
-                                        The system analyzes available patient
-                                        information and provides a model-based
-                                        risk assessment for the selected
-                                        condition.
-                                    </p>
-
                                 </div>
 
+                                <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-['Inter']">Backend</p>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className={`relative flex h-2.5 w-2.5`}>
+                                              {stats.status === "Online" ? (
+                                                  <>
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                                                  </>
+                                              ) : (
+                                                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                              )}
+                                            </span>
+                                            <span className={`text-sm font-semibold font-['Roboto'] ${stats.status === "Online" ? "text-emerald-600" : "text-red-500"}`}>{stats.status}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-['Inter']">Model</p>
+                                        <p className="mt-2 text-sm font-semibold text-slate-800 font-['Roboto']">{stats.modelStatus}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-['Inter']">Patients</p>
+                                        <p className="mt-2 text-xl font-bold text-indigo-600 font-['Roboto'] flex items-center gap-2"><Users size={18} /> {stats.totalPatients}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-['Inter']">Assessments</p>
+                                        <p className="mt-2 text-xl font-bold text-indigo-600 font-['Roboto'] flex items-center gap-2"><Activity size={18} /> {stats.totalAssessments}</p>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div className="mt-5 border-t border-slate-100 pt-4">
-
-                                <p className="text-xs leading-5 text-slate-400">
-                                    This prototype supports clinical decision
-                                    making and does not replace professional
-                                    medical judgment.
-                                </p>
-
-                            </div>
-
                         </div>
 
                     </section>
@@ -225,7 +256,7 @@ function Dashboard() {
 
                                     <tbody className="divide-y divide-white/50">
 
-                                        {recentAnalyses.map((item) => (
+                                        {recentAnalyses.length > 0 ? recentAnalyses.map((item) => (
 
                                             <tr
                                                 key={item.id}
@@ -247,6 +278,7 @@ function Dashboard() {
                                                         <p className="mt-0.5 text-xs text-slate-400">
                                                             {item.id}
                                                         </p>
+                                                    </div>
                                                     </div>
 
                                                 </td>
@@ -283,7 +315,19 @@ function Dashboard() {
 
                                             </tr>
 
-                                        ))}
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="4" className="px-6 py-12 text-center">
+                                                    <div className="flex flex-col items-center justify-center text-slate-400">
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-3 text-slate-400">
+                                                            <FileText size={24} />
+                                                        </div>
+                                                        <p className="text-sm font-medium font-['Inter'] text-slate-600">No assessments found</p>
+                                                        <p className="text-xs mt-1 font-['Roboto'] max-w-sm text-slate-500">Start a new analysis to see patient risk assessment results appear here.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
 
                                     </tbody>
 
@@ -293,42 +337,49 @@ function Dashboard() {
 
 
                             {/* Mobile cards */}
-                            <div className="divide-y divide-slate-100 md:hidden">
+                            <div className="divide-y divide-white/50 md:hidden">
 
-                                {recentAnalyses.map((item) => (
+                                {recentAnalyses.length > 0 ? recentAnalyses.map((item) => (
 
                                     <div
                                         key={item.id}
-                                        className="p-4"
+                                        className="p-5 cursor-pointer transition-colors hover:bg-white/60 group"
+                                        onClick={() => navigate("/history")}
                                     >
 
                                         <div className="flex items-start justify-between gap-4">
 
-                                            <div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 text-indigo-700 font-bold shadow-inner">
+                                                    {item.patient.charAt(0)}
+                                                </div>
+                                                <div>
 
-                                                <p className="text-sm font-medium text-slate-800">
-                                                    {item.patient}
-                                                </p>
+                                                    <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                                        {item.patient}
+                                                    </p>
 
-                                                <p className="mt-0.5 text-xs text-slate-400">
-                                                    {item.id}
-                                                </p>
+                                                    <p className="mt-0.5 text-xs text-slate-400">
+                                                        {item.id}
+                                                    </p>
 
+                                                </div>
                                             </div>
 
                                             <span
-                                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${getRiskStyle(
+                                                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${getRiskStyle(
                                                     item.level
                                                 )}`}
                                             >
+                                                <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                                 {item.risk}% · {item.level}
                                             </span>
 
                                         </div>
 
-                                        <div className="mt-3 flex items-center justify-between">
+                                        <div className="mt-4 flex items-center justify-between pl-13">
 
-                                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                            <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
                                                 <FileText size={14} />
                                                 {item.condition}
                                             </div>
@@ -342,7 +393,16 @@ function Dashboard() {
 
                                     </div>
 
-                                ))}
+                                )) : (
+                                    <div className="px-6 py-10 text-center">
+                                        <div className="flex flex-col items-center justify-center text-slate-400">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 mb-3 text-slate-400">
+                                                <FileText size={20} />
+                                            </div>
+                                            <p className="text-sm font-medium font-['Inter'] text-slate-600">No assessments</p>
+                                        </div>
+                                    </div>
+                                )}
 
                             </div>
 

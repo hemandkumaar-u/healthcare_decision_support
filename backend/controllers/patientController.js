@@ -13,16 +13,19 @@ const checkMissingData = (patientData) => {
 exports.createPatient = async (req, res) => {
   try {
     const patientData = req.body;
+    console.log("Received patientData:", JSON.stringify(patientData));
     
     // Check for missing data
     const missingFields = checkMissingData(patientData);
-    let riskAssessment = {
+    console.log("Provided riskAssessment:", patientData.riskAssessment);
+    
+    let riskAssessment = patientData.riskAssessment || {
       riskLevel: 'Unknown',
       explanation: 'Not assessed yet',
       isInsufficientData: missingFields.length > 0
     };
 
-    if (riskAssessment.isInsufficientData) {
+    if (riskAssessment.isInsufficientData && !patientData.riskAssessment) {
       riskAssessment.explanation = `Insufficient data to make a reliable prediction. Missing: ${missingFields.join(', ')}`;
     }
 
@@ -212,5 +215,55 @@ exports.getReportHtml = async (req, res) => {
     res.send(htmlContent);
   } catch (error) {
     res.status(500).send('Error generating report: ' + error.message);
+  }
+};
+
+exports.downloadPdf = async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const patient = await Patient.findById(patientId);
+    
+    if (!patient) {
+      return res.status(404).send('Patient not found');
+    }
+    
+    const { generateReportHtml } = require('../utils/reportTemplate');
+    const htmlContent = generateReportHtml(patient, patient.name, patient.riskAssessment || {});
+    
+    const htmlPdf = require('html-pdf-node');
+    let options = { format: 'A4' };
+    let file = { content: htmlContent };
+    
+    const pdfBuffer = await htmlPdf.generatePdf(file, options);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Assessment_Report_${(patient.name || 'Patient').replace(/\s+/g, '_')}.pdf`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).send('Error generating PDF report: ' + error.message);
+  }
+};
+
+exports.downloadReport = async (req, res) => {
+  try {
+    const email = req.body.email;
+    const name = req.body.name;
+    const patientData = req.body.patientData || {};
+    const assessment = req.body.riskAssessment || {};
+    
+    const { generateReportHtml } = require('../utils/reportTemplate');
+    const htmlContent = generateReportHtml(null, name, assessment, patientData);
+    
+    const htmlPdf = require('html-pdf-node');
+    let options = { format: 'A4' };
+    let file = { content: htmlContent };
+    
+    const pdfBuffer = await htmlPdf.generatePdf(file, options);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Assessment_Report_${(name || 'Patient').replace(/\s+/g, '_')}.pdf`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).send('Error generating PDF report: ' + error.message);
   }
 };
