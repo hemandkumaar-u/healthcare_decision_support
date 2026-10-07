@@ -1,0 +1,2 @@
+patient_id,patient_name,age,gender,condition,heart_rate,systolic_bp,diastolic_bp,temperature,spo2,respiratory_rate,wbc,crp,procalcitonin,chief_complaint,smoking_history,copd_flag
+PT-PN-1042,Arthur Pendelton,68,Male,Pneumonia Unspecified,112,118,74,39.1,89,28,16.4,92.5,2.15,"Productive cough, high fever, right pleuritic chest pain and shortness of breath",Yes,Yes

@@ -275,9 +275,10 @@ function Dashboard() {
                                                                 {item.patient}
                                                             </p>
 
-                                                        <p className="mt-0.5 text-xs text-slate-400">
-                                                            {item.id}
-                                                        </p>
+                                                            <p className="mt-0.5 text-xs text-slate-400">
+                                                                {item.id}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                     </div>
 

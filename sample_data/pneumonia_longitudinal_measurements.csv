@@ -1,0 +1,6 @@
+date_recorded,heart_rate_bpm,systolic_bp,diastolic_bp,temperature_c,spo2_percent,respiratory_rate,weight_kg,notes
+2024-03-08,74,124,80,36.7,98,16,74.5,Baseline routine checkup - healthy
+2024-03-11,82,126,82,37.6,96,18,74.2,Mild dry cough and fatigue noted
+2024-03-12,94,130,84,38.4,94,22,73.8,Productive cough with rust-colored sputum; chills
+2024-03-13,106,128,82,39.1,91,26,73.5,Pleuritic right-sided chest pain; worsening dyspnea
+2024-03-14,118,110,72,39.4,88,30,73.0,Acute distress, marked tachypnea, coarse crackles at right lung base

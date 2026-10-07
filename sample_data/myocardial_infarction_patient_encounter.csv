@@ -1,0 +1,2 @@
+patient_id,patient_name,age,gender,condition,heart_rate,systolic_bp,diastolic_bp,temperature,spo2,respiratory_rate,troponin_i,ck_mb,ldl_cholesterol,chief_complaint,prior_cad,hypertension_flag
+PT-MI-2098,Robert Vance,62,Male,Acute Myocardial Infarction,115,165,98,37.0,93,24,3.85,46.8,168,"Crushing substernal chest pressure radiating to left arm and jaw, severe diaphoresis",Yes,Yes
