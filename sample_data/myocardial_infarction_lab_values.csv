@@ -1,0 +1,23 @@
+test_name,result,unit,reference_range,date_collected
+High-Sensitivity Cardiac Troponin I (hs-cTnI),2450.0,ng/L,<14.0,2024-03-14
+Cardiac Troponin I (cTnI),3.85,ng/mL,<0.04,2024-03-14
+CK-MB,46.8,ng/mL,<5.0,2024-03-14
+Total Creatine Kinase (CK),580,U/L,30-200,2024-03-14
+Myoglobin,195,ng/mL,<90,2024-03-14
+NT-proBNP,780,pg/mL,<125,2024-03-14
+White Blood Cells (WBC),13.2,x10^9/L,4.5-11.0,2024-03-14
+Platelets,265,x10^9/L,150-450,2024-03-14
+Fasting Glucose,174,mg/dL,70-99,2024-03-14
+HbA1c,7.8,%,4.0-5.6,2024-03-14
+Total Cholesterol,245,mg/dL,<200,2024-03-14
+LDL Cholesterol,168,mg/dL,<100,2024-03-14
+HDL Cholesterol,34,mg/dL,>40,2024-03-14
+Triglycerides,220,mg/dL,<150,2024-03-14
+Serum Creatinine,1.3,mg/dL,0.6-1.1,2024-03-14
+Blood Urea Nitrogen (BUN),22,mg/dL,7-20,2024-03-14
+Serum Potassium,4.4,mEq/L,3.5-5.0,2024-03-14
+Serum Sodium,138,mEq/L,136-145,2024-03-14
+AST,65,U/L,10-40,2024-03-14
+ALT,38,U/L,7-56,2024-03-14
+D-Dimer,0.42,mcg/mL,<0.50,2024-03-14
+High-Sensitivity CRP,18.4,mg/L,<3.0,2024-03-14

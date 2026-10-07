@@ -1,0 +1,8 @@
+condition,date_diagnosed,status,treatment,notes
+Chronic Obstructive Pulmonary Disease (COPD),2019-06-15,Active,Tiotropium 18mcg daily,Moderate persistent airflow limitation
+Tobacco Use Disorder,2005-01-10,Active,Nicotine replacement,25 pack-year history
+Influenza A,2024-03-05,Resolved,Oseltamivir 75mg bid (completed),Preceded current bacterial superinfection
+Type 2 Diabetes Mellitus,2017-09-20,Active,Metformin 850mg bid,HbA1c 7.4%
+Hypertension,2018-04-10,Active,Amlodipine 5mg daily,Well controlled baseline
+Community-Acquired Pneumonia,2021-11-03,Resolved,Amoxicillin-clavulanate (7 days),Left lower lobe pneumonia; full resolution
+Seasonal Allergic Rhinitis,2012-03-12,Active,Fluticasone nasal spray PRN,Mild intermittent symptoms

@@ -1,0 +1,9 @@
+condition,date_diagnosed,status,treatment,notes
+Coronary Artery Disease (CAD),2021-04-18,Active,Aspirin 81mg, Clopidogrel 75mg,Prior DES stent to Left Anterior Descending (LAD) artery
+Essential Hypertension,2016-08-10,Active,Losartan 50mg, Amlodipine 5mg,Non-adherent with low-sodium diet
+Hyperlipidemia,2015-11-22,Active,Atorvastatin 40mg daily,Sub-optimally controlled LDL
+Type 2 Diabetes Mellitus,2018-02-14,Active,Metformin 1000mg bid,Poor glycemic control (HbA1c > 7.5%)
+Chronic Stable Angina,2022-09-05,Active,Nitroglycerin 0.4mg sublingual PRN,CCS Class II angina prior to acute event
+Tobacco Use Disorder,1998-05-01,Active,Counseling offered,30 pack-year active cigarette smoking history
+Family History of Premature CAD,2010-01-01,Active,N/A,Father had fatal myocardial infarction at age 48
+Gastroesophageal Reflux Disease (GERD),2017-03-12,Active,Omeprazole 20mg daily,Occasional heartburn
