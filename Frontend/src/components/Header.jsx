@@ -1,4 +1,4 @@
-import { Bell, UserCircle } from "lucide-react";
+import { UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function Header() {
@@ -35,17 +35,7 @@ function Header() {
                 {/* Right side */}
                 <div className="flex items-center gap-3">
 
-                    <button
-                        className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-                        aria-label="Notifications"
-                    >
-                        <Bell size={19} />
 
-                        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-pink-500" />
-                    </button>
-
-
-                    <div className="hidden h-6 w-px bg-slate-200 sm:block" />
 
 
                     <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-slate-50">

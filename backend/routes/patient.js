@@ -8,5 +8,7 @@ router.get('/:id', patientController.getPatient);
 router.post('/:id/analyze', patientController.analyzeRisk);
 router.post('/:id/report', patientController.sendReport);
 router.get('/:id/report.html', patientController.getReportHtml);
+router.get('/:id/report.pdf', patientController.downloadPdf);
+router.post('/report/download', patientController.downloadReport);
 
 module.exports = router;

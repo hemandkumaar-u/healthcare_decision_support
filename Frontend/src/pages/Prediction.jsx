@@ -48,11 +48,58 @@ function Prediction() {
     const [sendingReport, setSendingReport] = useState(false);
     const [reportSent, setReportSent] = useState(false);
 
-    const componentRef = useRef();
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-        documentTitle: `Assessment_Report_${formData?.patientName?.replace(/\s+/g, '_') || 'Patient'}`,
-    });
+    const [isDownloading, setIsDownloading] = useState(false);
+    const componentRef = useRef(null);
+    
+    const handleDownloadPdf = async () => {
+        try {
+            setIsDownloading(true);
+            const response = await fetch('http://localhost:5000/api/patients/report/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: formData?.patientName || "Unknown Patient",
+                    patientData: {
+                        patientId: formData?.patientId,
+                        age: formData?.age,
+                        condition: formData?.condition,
+                        heartRate: formData?.heartRate,
+                        systolicBP: formData?.systolicBP,
+                        diastolicBP: formData?.diastolicBP,
+                        temperature: formData?.temperature,
+                        spo2: formData?.spo2
+                    },
+                    riskAssessment: {
+                        riskLevel: prediction?.label,
+                        explanation: `Risk class: ${prediction?.class}. Based on your health metrics.`,
+                        explanationDetails: [] // Optional: if you have explanation details
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to download PDF");
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Assessment_Report_${(formData?.patientName || 'Patient').replace(/\s+/g, '_')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success("PDF downloaded successfully!");
+        } catch (error) {
+            console.error("Download PDF error:", error);
+            toast.error("Failed to generate PDF. Please try again.");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     const dataQuality = useMemo(() => {
         if (!formData) return { score: 0, details: [] };
@@ -385,7 +432,7 @@ function Prediction() {
      * =========================================================
      */
 
-    const handleSave = () => {
+    const handleSave = async () => {
         /*
          * Mobile is required when prescription is selected.
          */
@@ -485,6 +532,36 @@ function Prediction() {
             createdAt: new Date().toISOString(),
         };
 
+        try {
+            // Save to backend
+            await fetch('http://localhost:5000/api/patients', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: formData.patientName || "Unknown",
+                    email: formData.email || "",
+                    age: formData.age || 0,
+                    vitalSigns: JSON.stringify({
+                        HR: formData.heartRate,
+                        BP_SYS: formData.systolicBP,
+                        BP_DIA: formData.diastolicBP,
+                        TEMP: formData.temperature,
+                        SPO2: formData.spo2,
+                        RR: formData.respiratoryRate
+                    }),
+                    riskAssessment: {
+                        riskLevel: prediction.label,
+                        explanation: `Risk class: ${prediction.class}. Conditions checked.`,
+                        isInsufficientData: dataQuality.score < 100
+                    }
+                })
+            });
+        } catch (err) {
+            console.error("Failed to save to backend", err);
+        }
+
         const existingHistory = JSON.parse(
             localStorage.getItem(
                 "analysisHistory"
@@ -500,6 +577,7 @@ function Prediction() {
         );
 
         setSaved(true);
+        toast.success("Analysis saved successfully");
     };
 
     /*
@@ -563,7 +641,7 @@ function Prediction() {
      * =========================================================
      */
      
-    if (!formData) {
+    if (!formData || !prediction) {
         return (
             <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
                 <Sidebar />
@@ -652,15 +730,28 @@ function Prediction() {
                             </div>
                             
                             <button
-                                onClick={handlePrint}
-                                className="flex items-center gap-2 rounded-xl bg-white/60 px-5 py-2.5 text-sm font-semibold text-slate-700 border border-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all hover:bg-white hover:shadow-md hover:-translate-y-0.5"
+                                onClick={handleDownloadPdf}
+                                disabled={isDownloading}
+                                className={`flex items-center gap-2 rounded-xl bg-white/60 px-5 py-2.5 text-sm font-semibold text-slate-700 border border-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all ${isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:shadow-md hover:-translate-y-0.5'}`}
                             >
-                                <Download size={16} />
-                                Download PDF
+                                {isDownloading ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700"></div>
+                                ) : (
+                                    <Download size={16} />
+                                )}
+                                {isDownloading ? 'Downloading...' : 'Download PDF'}
                             </button>
                         </div>
                         
                         <div ref={componentRef} className="print-container">
+                            {/* ================================================= */}
+                            {/* PRINT HEADER */}
+                            {/* ================================================= */}
+                            <div className="hidden print:block mb-8 pb-6 border-b border-slate-200">
+                                <h1 className="text-3xl font-bold text-blue-900 font-['Inter'] tracking-tight">MedRisk AI</h1>
+                                <p className="text-sm font-medium text-slate-500 font-['Roboto'] mt-1">Clinical Decision Support</p>
+                            </div>
+
                         {/* ================================================= */}
                         {/* CONDITION + PATIENT */}
                         {/* ================================================= */}
