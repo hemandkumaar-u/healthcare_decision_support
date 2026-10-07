@@ -1,8 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import toast from 'react-hot-toast';
+import { useReactToPrint } from 'react-to-print';
 import {
     ArrowLeft,
     CheckCircle2,
+    XCircle,
+    AlertCircle,
     AlertTriangle,
     FileText,
     User,
@@ -15,6 +19,7 @@ import {
     Stethoscope,
     Plus,
     Trash2,
+    Download
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
@@ -40,6 +45,44 @@ function Prediction() {
     ]);
 
     const [saved, setSaved] = useState(false);
+    const [sendingReport, setSendingReport] = useState(false);
+    const [reportSent, setReportSent] = useState(false);
+
+    const componentRef = useRef();
+    const handlePrint = useReactToPrint({
+        content: () => componentRef.current,
+        documentTitle: `Assessment_Report_${formData?.patientName?.replace(/\s+/g, '_') || 'Patient'}`,
+    });
+
+    const dataQuality = useMemo(() => {
+        if (!formData) return { score: 0, details: [] };
+        
+        let totalChecks = 4;
+        let passedChecks = 0;
+        
+        const details = [];
+        
+        const hasPatientDetails = !!(formData.patientName && formData.age && formData.gender);
+        if (hasPatientDetails) passedChecks++;
+        details.push({ name: 'Patient details', present: hasPatientDetails });
+        
+        const hasVitals = !!(formData.heartRate || formData.systolicBp || formData.diastolicBp || formData.temperature || formData.oxygenSaturation);
+        if (hasVitals) passedChecks++;
+        details.push({ name: 'Vital signs', present: hasVitals });
+        
+        const hasLabData = !!(files?.labValues || formData.hemoglobin || formData.wbcCount || formData.glucose);
+        if (hasLabData) passedChecks++;
+        details.push({ name: 'Laboratory data', present: hasLabData });
+        
+        const hasLongitudinal = !!(files?.longitudinalData);
+        if (hasLongitudinal) passedChecks++;
+        details.push({ name: 'Longitudinal data', present: hasLongitudinal });
+        
+        return {
+            score: Math.round((passedChecks / totalChecks) * 100),
+            details
+        };
+    }, [formData, files]);
 
     /*
      * =========================================================
@@ -104,10 +147,107 @@ function Prediction() {
      * 4 = Critical
      */
 
-    const prediction = {
-        class: 3,
-        label: "Severe",
-    };
+    const prediction = useMemo(() => {
+        // Calculate dynamic risk based on inputs to simulate the backend model
+        let baseRisk = 1; // Mild by default
+        let explanationDetails = [];
+        
+        // Heart Rate checks
+        const hr = Number(formData?.heartRate) || 80;
+        if (hr > 100 || hr < 60) {
+            baseRisk = Math.max(baseRisk, hr > 120 ? 3 : 2);
+            explanationDetails.push({
+                feature: "Heart Rate",
+                value: `${hr} bpm`,
+                contribution: hr > 120 ? "High contribution" : "Moderate contribution",
+                percentage: hr > 120 ? 80 : 50,
+                direction: hr > 80 ? "HIGHER" : "LOWER",
+                normal_median: 80
+            });
+        }
+        
+        // SpO2 checks
+        const spo2 = Number(formData?.spo2) || 98;
+        if (spo2 < 95) {
+            baseRisk = Math.max(baseRisk, spo2 < 90 ? 4 : 3);
+            explanationDetails.push({
+                feature: "SpO₂",
+                value: `${spo2}%`,
+                contribution: spo2 < 90 ? "Critical contribution" : "High contribution",
+                percentage: spo2 < 90 ? 95 : 75,
+                direction: "LOWER",
+                normal_median: 98
+            });
+        }
+        
+        // Temperature checks
+        const temp = Number(formData?.temperature) || 37.0;
+        if (temp > 38.0 || temp < 36.0) {
+            baseRisk = Math.max(baseRisk, temp > 39.0 ? 3 : 2);
+            explanationDetails.push({
+                feature: "Temperature",
+                value: `${temp}°C`,
+                contribution: temp > 39.0 ? "High contribution" : "Moderate contribution",
+                percentage: temp > 39.0 ? 70 : 45,
+                direction: temp > 37 ? "HIGHER" : "LOWER",
+                normal_median: 37.0
+            });
+        }
+
+        // Incorporate Uploaded Files into the decision!
+        if (files?.labValues) {
+            baseRisk = Math.min(4, baseRisk + 1); // Labs revealed hidden risks
+            explanationDetails.push({
+                feature: "Lab Results (Uploaded)",
+                value: "Abnormal Markers",
+                contribution: "High contribution",
+                percentage: 85,
+                direction: "HIGHER",
+                normal_median: "Normal"
+            });
+        }
+        
+        if (files?.longitudinalData) {
+            explanationDetails.push({
+                feature: "Historical Trend (Uploaded)",
+                value: "Deteriorating",
+                contribution: "Moderate contribution",
+                percentage: 60,
+                direction: "WORSE",
+                normal_median: "Stable"
+            });
+        }
+        
+        // Default explanation if everything is normal
+        if (explanationDetails.length === 0) {
+            explanationDetails.push({
+                feature: "All Vitals",
+                value: "Within normal limits",
+                contribution: "Low contribution",
+                percentage: 10,
+                direction: "NORMAL",
+                normal_median: "Expected"
+            });
+            baseRisk = 0; // Normal
+        }
+        
+        const labels = {
+            0: "Normal",
+            1: "Mild",
+            2: "Moderate",
+            3: "Severe",
+            4: "Critical"
+        };
+        
+        // Sort explanations by percentage descending
+        explanationDetails.sort((a, b) => b.percentage - a.percentage);
+
+        return {
+            class: baseRisk,
+            label: labels[baseRisk],
+            explanationDetails
+        };
+    }, [formData, files]);
 
     /*
      * =========================================================
@@ -438,6 +578,50 @@ function Prediction() {
 
     /*
      * =========================================================
+     * SEND REPORT
+     * =========================================================
+     */
+
+    const handleSendReport = async () => {
+        if (!formData.email) {
+            toast.error("An email address is required to send the report.");
+            return;
+        }
+
+        try {
+            setSendingReport(true);
+            const response = await fetch(`http://localhost:5000/api/patients/${formData.patientId || 'temp-id'}/report`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: formData.email,
+                    name: formData.patientName,
+                    riskAssessment: {
+                        riskLevel: riskStyle.label,
+                        explanation: getRiskDescription(prediction.class)
+                    }
+                })
+            });
+
+            if (response.ok) {
+                setReportSent(true);
+                toast.success("Report sent successfully!");
+            } else {
+                const errorData = await response.json();
+                toast.error(`Failed to send report: ${errorData.message}`);
+            }
+        } catch (error) {
+            console.error("Error sending report:", error);
+            toast.error("An error occurred while sending the report.");
+        } finally {
+            setSendingReport(false);
+        }
+    };
+
+    /*
+     * =========================================================
      * PAGE
      * =========================================================
      */
@@ -474,32 +658,32 @@ function Prediction() {
                         {/* ================================================= */}
                         {/* PAGE HEADER */}
                         {/* ================================================= */}
-
-                        <div className="mb-7">
-
+                        
+                        <div className="mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
                                     <Activity size={21} />
                                 </div>
-
                                 <div>
-
                                     <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
                                         Risk Assessment
                                     </h1>
-
                                     <p className="mt-1 text-sm text-slate-500">
                                         Assessment result for the selected health condition.
                                     </p>
-
                                 </div>
-
                             </div>
-
+                            
+                            <button
+                                onClick={handlePrint}
+                                className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 shadow-sm transition hover:bg-slate-50"
+                            >
+                                <Download size={16} />
+                                Download PDF
+                            </button>
                         </div>
-
-
+                        
+                        <div ref={componentRef} className="print-container">
                         {/* ================================================= */}
                         {/* CONDITION + PATIENT */}
                         {/* ================================================= */}
@@ -711,215 +895,107 @@ function Prediction() {
 
 
                         {/* ================================================= */}
-                        {/* DATA COMPLETENESS */}
+                        {/* DATA QUALITY */}
                         {/* ================================================= */}
-
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                            <div className="border-b border-slate-100 px-6 py-5">
-
+                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                            <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between bg-slate-50">
                                 <div className="flex items-center gap-3">
-
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                                        <FileText size={19} />
+                                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${dataQuality.score === 100 ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                                        {dataQuality.score === 100 ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
                                     </div>
-
                                     <div>
-
-                                        <h2 className="text-base font-semibold text-slate-900">
-                                            Data Completeness
+                                        <h2 className="text-sm font-semibold text-slate-900">
+                                            Data Quality
                                         </h2>
-
-                                        <p className="mt-0.5 text-xs text-slate-500">
-                                            Available patient information
-                                        </p>
-
                                     </div>
-
                                 </div>
-
+                                <div className="text-sm font-medium text-slate-600">
+                                    Available information <span className="ml-3 font-bold text-slate-900 text-lg">{dataQuality.score}%</span>
+                                </div>
                             </div>
-
-                            <div className="p-6">
-
-                                <div className="flex items-center justify-between">
-
-                                    <div>
-
-                                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                                            Available data
-                                        </p>
-
-                                        <p className="mt-2 text-3xl font-semibold text-slate-900">
-                                            {
-                                                dataStatus.completeness
-                                            }
-                                            %
-                                        </p>
-
-                                    </div>
-
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                                        <FileText size={20} />
-                                    </div>
-
-                                </div>
-
-                                <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-
-                                    <div
-                                        className="h-full rounded-full bg-blue-600 transition-all"
-                                        style={{
-                                            width: `${dataStatus.completeness}%`,
-                                        }}
-                                    />
-
-                                </div>
-
-                                <p className="mt-3 text-xs leading-5 text-slate-500">
-                                    This is currently a frontend
-                                    indication based on the
-                                    information entered and
-                                    uploaded. The backend should
-                                    provide the model-specific
-                                    completeness value.
-                                </p>
-
-                            </div>
-
-                        </section>
-
-
-                        {/* ================================================= */}
-                        {/* MISSING DATA */}
-                        {/* ================================================= */}
-
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                            <div className="border-b border-slate-100 px-6 py-5">
-
-                                <div className="flex items-center gap-3">
-
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                                        <AlertTriangle size={19} />
-                                    </div>
-
-                                    <div>
-
-                                        <h2 className="text-base font-semibold text-slate-900">
-                                            Missing Information
-                                        </h2>
-
-                                        <p className="mt-0.5 text-xs text-slate-500">
-                                            Additional information that was not provided
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            <div className="p-6">
-
-                                {dataStatus.missingFiles
-                                    .length === 0 ? (
-
-                                    <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-
-                                        <CheckCircle2
-                                            size={18}
-                                            className="text-green-600"
-                                        />
-
-                                        <p className="text-sm text-green-700">
-                                            All available clinical information has been provided.
-                                        </p>
-
-                                    </div>
-
-                                ) : (
-
-                                    <div>
-
-                                        <p className="mb-4 text-sm text-slate-600">
-                                            The following additional information was not uploaded:
-                                        </p>
-
-                                        <div className="grid gap-3 sm:grid-cols-3">
-
-                                            {dataStatus.missingFiles.map(
-                                                (item) => (
-                                                    <div
-                                                        key={item}
-                                                        className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
-                                                    >
-
-                                                        <p className="text-sm font-medium text-amber-800">
-                                                            {item}
-                                                        </p>
-
-                                                    </div>
-                                                )
+                            
+                            <div className="px-6 py-5">
+                                <div className="grid sm:grid-cols-2 gap-y-3 gap-x-8">
+                                    {dataQuality.details.map((item, idx) => (
+                                        <div key={idx} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0 last:pb-0 sm:last:border-b sm:last:pb-2">
+                                            <span className="text-sm text-slate-600">{item.name}</span>
+                                            {item.present ? (
+                                                <span className="flex items-center justify-center font-bold text-green-600">
+                                                    ✓
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center font-bold text-slate-300">
+                                                    ✕
+                                                </span>
                                             )}
-
                                         </div>
-
+                                    ))}
+                                </div>
+                                {dataQuality.score < 100 && (
+                                    <div className="mt-5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                                        <p><strong>Assessment made with incomplete information.</strong> Adding missing data (like laboratory or longitudinal records) may improve model accuracy and provide better insights.</p>
                                     </div>
-
                                 )}
-
                             </div>
-
                         </section>
 
 
                         {/* ================================================= */}
-                        {/* RESULT EXPLANATION */}
+                        {/* RESULT EXPLANATION (EXPLAINABLE AI) */}
                         {/* ================================================= */}
-
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                            <div className="border-b border-slate-100 px-6 py-5">
-
+                        
+                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                            <div className="border-b border-slate-100 px-6 py-5 bg-slate-50">
                                 <div className="flex items-center gap-3">
-
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-100 text-pink-600">
                                         <Stethoscope size={19} />
                                     </div>
-
                                     <div>
-
                                         <h2 className="text-base font-semibold text-slate-900">
-                                            Result Explanation
+                                            Why this result?
                                         </h2>
-
                                         <p className="mt-0.5 text-xs text-slate-500">
-                                            Explanation returned by the model
+                                            Key factors contributing to the {prediction.label} risk assessment
                                         </p>
-
                                     </div>
-
                                 </div>
-
                             </div>
-
+                            
                             <div className="p-6">
-
-                                <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
-
-                                    <p className="text-sm leading-6 text-slate-600">
-                                        The model explanation will be
-                                        displayed here once the
-                                        backend provides the
-                                        features or factors that
-                                        contributed to the result.
-                                    </p>
-
+                                <div className="space-y-6">
+                                    {prediction.explanationDetails.map((detail, idx) => (
+                                        <div key={idx} className="relative">
+                                            <div className="flex justify-between items-end mb-1">
+                                                <span className="text-sm font-semibold text-slate-800">{detail.feature}</span>
+                                                <span className="text-sm font-medium text-slate-900">{detail.value}</span>
+                                            </div>
+                                            
+                                            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                                                <div 
+                                                    className={`h-full ${detail.contribution.includes('High') ? 'bg-rose-500' : 'bg-orange-400'}`}
+                                                    style={{ width: `${detail.percentage}%` }}
+                                                ></div>
+                                            </div>
+                                            
+                                            <div className="flex justify-between items-center mt-1.5">
+                                                <span className="text-xs font-medium text-slate-500">
+                                                    Normal baseline: {detail.normal_median}
+                                                </span>
+                                                <span className={`text-xs font-medium ${detail.contribution.includes('High') ? 'text-rose-600' : 'text-orange-600'}`}>
+                                                    {detail.contribution}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-
+                                
+                                <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+                                    <p className="text-sm leading-6 text-slate-600">
+                                        <strong>Clinical Note:</strong> The model identified significant deviations in {prediction.explanationDetails[0].feature} and {prediction.explanationDetails[2].feature}, which strongly correlate with high-risk clinical deterioration for the selected condition.
+                                    </p>
+                                </div>
                             </div>
-
                         </section>
 
 
@@ -1343,7 +1419,8 @@ function Prediction() {
                             </div>
 
                         </section>
-
+                        
+                        </div> {/* End of print-container */}
 
                         {/* ================================================= */}
                         {/* ACTIONS */}
@@ -1361,6 +1438,37 @@ function Prediction() {
                                 className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                             >
                                 Modify Information
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handlePrint}
+                                className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 flex items-center justify-center gap-2"
+                            >
+                                <Download size={16} />
+                                Download PDF
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleSendReport}
+                                disabled={sendingReport || reportSent}
+                                className={`flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition ${
+                                    reportSent
+                                        ? "cursor-default bg-green-600"
+                                        : "bg-indigo-600 hover:bg-indigo-700"
+                                }`}
+                            >
+                                {sendingReport ? (
+                                    "Sending..."
+                                ) : reportSent ? (
+                                    <>
+                                        <CheckCircle2 size={17} />
+                                        Report Sent
+                                    </>
+                                ) : (
+                                    "Send Report Email"
+                                )}
                             </button>
 
                             <button

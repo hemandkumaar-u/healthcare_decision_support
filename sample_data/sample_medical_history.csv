@@ -1,0 +1,6 @@
+condition,date_diagnosed,status,treatment,notes
+Type 2 Diabetes,2018-05-12,Active,Metformin 500mg,Well controlled
+Hypertension,2020-11-04,Active,Lisinopril 10mg,Blood pressure consistently < 130/80
+Asthma,2010-02-15,Inactive,Albuterol inhaler PRN,No exacerbations in 5 years
+Appendicitis,2015-08-20,Resolved,Appendectomy,Uncomplicated recovery
+Hyperlipidemia,2019-01-30,Active,Atorvastatin 20mg,Diet and lifestyle modification advised
