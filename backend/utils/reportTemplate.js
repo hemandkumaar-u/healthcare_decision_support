@@ -189,6 +189,9 @@ const generateReportHtml = (patient, name, assessment, patientData = {}) => {
             <div class="header">
                 <div class="logo">
                     MedRisk AI
+                    <div class="subtitle" style="font-size: 18px; font-weight: 600; color: #2563eb; margin-top: 6px; text-align: center;">
+                        Health Risk Assessment Report
+                    </div>
                     <div style="font-size: 14px; font-weight: 500; color: #6b7280; letter-spacing: normal; margin-top: 4px;">
                         Clinical Decision Support
                     </div>
