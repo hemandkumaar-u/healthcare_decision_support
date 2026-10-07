@@ -70,11 +70,11 @@ function Prediction() {
         if (hasVitals) passedChecks++;
         details.push({ name: 'Vital signs', present: hasVitals });
         
-        const hasLabData = !!(files?.labValues || formData.hemoglobin || formData.wbcCount || formData.glucose);
+        const hasLabData = !!(files?.laboratory || formData.hemoglobin || formData.wbcCount || formData.glucose);
         if (hasLabData) passedChecks++;
         details.push({ name: 'Laboratory data', present: hasLabData });
         
-        const hasLongitudinal = !!(files?.longitudinalData);
+        const hasLongitudinal = !!(files?.longitudinal);
         if (hasLongitudinal) passedChecks++;
         details.push({ name: 'Longitudinal data', present: hasLongitudinal });
         
@@ -84,52 +84,6 @@ function Prediction() {
         };
     }, [formData, files]);
 
-    /*
-     * =========================================================
-     * NO PATIENT DATA
-     * =========================================================
-     */
-
-    if (!formData) {
-        return (
-            <div className="min-h-screen bg-slate-50">
-                <Sidebar />
-
-                <div className="lg:pl-64">
-                    <Header />
-
-                    <main className="flex min-h-[calc(100vh-64px)] items-center justify-center px-5 py-10">
-
-                        <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
-                                <AlertTriangle size={24} />
-                            </div>
-
-                            <h1 className="mt-4 text-lg font-semibold text-slate-900">
-                                No patient data found
-                            </h1>
-
-                            <p className="mt-2 text-sm leading-6 text-slate-500">
-                                Please enter patient information before
-                                running a risk assessment.
-                            </p>
-
-                            <button
-                                type="button"
-                                onClick={() => navigate("/patient/new")}
-                                className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
-                            >
-                                New Analysis
-                            </button>
-
-                        </div>
-
-                    </main>
-                </div>
-            </div>
-        );
-    }
 
     /*
      * =========================================================
@@ -195,7 +149,7 @@ function Prediction() {
         }
 
         // Incorporate Uploaded Files into the decision!
-        if (files?.labValues) {
+        if (files?.laboratory) {
             baseRisk = Math.min(4, baseRisk + 1); // Labs revealed hidden risks
             explanationDetails.push({
                 feature: "Lab Results (Uploaded)",
@@ -207,7 +161,7 @@ function Prediction() {
             });
         }
         
-        if (files?.longitudinalData) {
+        if (files?.longitudinal) {
             explanationDetails.push({
                 feature: "Historical Trend (Uploaded)",
                 value: "Deteriorating",
@@ -249,72 +203,6 @@ function Prediction() {
         };
     }, [formData, files]);
 
-    /*
-     * =========================================================
-     * DATA COMPLETENESS
-     * =========================================================
-     *
-     * Temporary frontend calculation.
-     * Backend should eventually provide the actual value.
-     */
-
-    const dataStatus = useMemo(() => {
-        const requiredFields = [
-            "patientName",
-            "patientId",
-            "age",
-            "gender",
-            "heartRate",
-            "systolicBP",
-            "diastolicBP",
-            "temperature",
-            "spo2",
-            "respiratoryRate",
-        ];
-
-        const completedFields = requiredFields.filter(
-            (field) =>
-                formData[field] !== undefined &&
-                formData[field] !== null &&
-                String(formData[field]).trim() !== ""
-        );
-
-        const uploadedFiles = files
-            ? Object.values(files).filter(Boolean).length
-            : 0;
-
-        const totalFiles = 3;
-
-        const fieldCompletion =
-            (completedFields.length / requiredFields.length) * 70;
-
-        const fileCompletion =
-            (uploadedFiles / totalFiles) * 30;
-
-        const completeness = Math.round(
-            fieldCompletion + fileCompletion
-        );
-
-        const missingFiles = [];
-
-        if (!files?.laboratory) {
-            missingFiles.push("Laboratory values");
-        }
-
-        if (!files?.medicalHistory) {
-            missingFiles.push("Medical history");
-        }
-
-        if (!files?.longitudinal) {
-            missingFiles.push("Longitudinal measurements");
-        }
-
-        return {
-            completeness,
-            missingFiles,
-            uploadedFiles,
-        };
-    }, [formData, files]);
 
     /*
      * =========================================================
@@ -523,14 +411,14 @@ function Prediction() {
 
             prediction: {
                 class: prediction.class,
-                label: riskStyle.label,
+                label: prediction.label,
             },
 
             dataCompleteness:
-                dataStatus.completeness,
+                dataQuality.score,
 
             missingData:
-                dataStatus.missingFiles,
+                dataQuality.details.filter(d => !d.present).map(d => d.name),
 
             /*
              * Multiple medications are stored here.
@@ -598,9 +486,20 @@ function Prediction() {
                 body: JSON.stringify({
                     email: formData.email,
                     name: formData.patientName,
+                    patientData: {
+                        patientId: formData.patientId,
+                        age: formData.age,
+                        condition: formData.condition,
+                        heartRate: formData.heartRate,
+                        systolicBP: formData.systolicBP,
+                        diastolicBP: formData.diastolicBP,
+                        temperature: formData.temperature,
+                        spo2: formData.spo2
+                    },
                     riskAssessment: {
-                        riskLevel: riskStyle.label,
-                        explanation: getRiskDescription(prediction.class)
+                        riskLevel: prediction.label,
+                        explanation: `Based on your analysis, the model assessed a risk class of ${prediction.class}.`,
+                        explanationDetails: prediction.explanationDetails
                     }
                 })
             });
@@ -622,12 +521,53 @@ function Prediction() {
 
     /*
      * =========================================================
+     * NO PATIENT DATA (Early Return)
+     * =========================================================
+     */
+     
+        return (
+            <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
+                <Sidebar />
+                <div className="lg:pl-64">
+                    <Header />
+                    <main className="flex min-h-[calc(100vh-64px)] items-center justify-center px-5 py-10">
+                        <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/50 bg-white/40 p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                            <div className="absolute top-0 right-0 -mt-8 -mr-8 h-32 w-32 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 opacity-20 blur-2xl"></div>
+                            
+                            <div className="relative z-10">
+                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 text-amber-600 shadow-inner">
+                                    <AlertTriangle size={28} />
+                                </div>
+                                <h1 className="mt-5 text-xl font-bold text-slate-900 font-['Inter']">
+                                    No patient data found
+                                </h1>
+                                <p className="mt-3 text-sm leading-relaxed text-slate-600 font-['Roboto']">
+                                    Please enter patient information before
+                                    running a risk assessment.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate("/patient/new")}
+                                    className="mt-8 w-full rounded-xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-slate-800 hover:-translate-y-0.5"
+                                >
+                                    New Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        );
+    }
+
+    /*
+     * =========================================================
      * PAGE
      * =========================================================
      */
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
 
             <Sidebar />
 
@@ -635,7 +575,7 @@ function Prediction() {
 
                 <Header />
 
-                <main className="px-5 py-6 sm:px-7 lg:px-8">
+                <main className="px-5 py-8 sm:px-7 lg:px-8">
 
                     <div className="mx-auto max-w-6xl">
 
@@ -645,12 +585,10 @@ function Prediction() {
 
                         <button
                             type="button"
-                            onClick={() =>
-                                navigate("/patient/new")
-                            }
-                            className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+                            onClick={() => navigate("/patient/new")}
+                            className="group mb-6 flex w-fit items-center gap-2 rounded-full bg-white/50 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm ring-1 ring-inset ring-slate-200 backdrop-blur-sm transition-all hover:bg-white hover:text-indigo-600"
                         >
-                            <ArrowLeft size={17} />
+                            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
                             Back to patient input
                         </button>
 
@@ -659,16 +597,16 @@ function Prediction() {
                         {/* PAGE HEADER */}
                         {/* ================================================= */}
                         
-                        <div className="mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                                    <Activity size={21} />
+                        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                            <div className="flex items-center gap-4">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-lg shadow-indigo-500/30">
+                                    <Activity size={24} />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-['Inter'] drop-shadow-sm">
                                         Risk Assessment
                                     </h1>
-                                    <p className="mt-1 text-sm text-slate-500">
+                                    <p className="mt-1 text-sm text-slate-600 font-['Roboto']">
                                         Assessment result for the selected health condition.
                                     </p>
                                 </div>
@@ -676,7 +614,7 @@ function Prediction() {
                             
                             <button
                                 onClick={handlePrint}
-                                className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 shadow-sm transition hover:bg-slate-50"
+                                className="flex items-center gap-2 rounded-xl bg-white/60 px-5 py-2.5 text-sm font-semibold text-slate-700 border border-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all hover:bg-white hover:shadow-md hover:-translate-y-0.5"
                             >
                                 <Download size={16} />
                                 Download PDF
@@ -688,27 +626,28 @@ function Prediction() {
                         {/* CONDITION + PATIENT */}
                         {/* ================================================= */}
 
-                        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+                        <div className="mb-8 grid gap-6 lg:grid-cols-2">
 
                             {/* Condition */}
 
-                            <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                                <div className="border-b border-slate-100 px-6 py-5">
+                            <section className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                                <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gradient-to-bl from-blue-300 to-indigo-400 opacity-20 blur-2xl"></div>
+                                
+                                <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
                                     <div className="flex items-center gap-3">
 
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                            <ClipboardList size={19} />
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100">
+                                            <ClipboardList size={20} />
                                         </div>
 
                                         <div>
 
-                                            <h2 className="text-base font-semibold text-slate-900">
+                                            <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                                 Assessment
                                             </h2>
 
-                                            <p className="mt-0.5 text-xs text-slate-500">
+                                            <p className="mt-0.5 text-xs font-medium text-slate-500 font-['Roboto']">
                                                 Selected health condition
                                             </p>
 
@@ -718,21 +657,21 @@ function Prediction() {
 
                                 </div>
 
-                                <div className="p-6">
+                                <div className="p-7">
 
-                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-indigo-500/70">
                                         Condition
                                     </p>
 
-                                    <p className="mt-2 text-xl font-semibold text-slate-900">
+                                    <p className="mt-2 text-2xl font-bold text-slate-900 font-['Inter']">
                                         {formData.condition}
                                     </p>
 
-                                    <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                                    <div className="mt-5 inline-flex items-center gap-2 rounded-lg bg-indigo-50/50 px-3 py-1.5 text-xs font-medium text-indigo-700 border border-indigo-100">
 
                                         <ShieldCheck
                                             size={15}
-                                            className="text-blue-600"
+                                            className="text-indigo-600"
                                         />
 
                                         Decision-support assessment
@@ -746,23 +685,24 @@ function Prediction() {
 
                             {/* Patient */}
 
-                            <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <section className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                                <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-gradient-to-tr from-slate-300 to-slate-400 opacity-20 blur-2xl"></div>
 
-                                <div className="border-b border-slate-100 px-6 py-5">
+                                <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
                                     <div className="flex items-center gap-3">
 
-                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                                            <User size={19} />
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 shadow-sm ring-1 ring-slate-200">
+                                            <User size={20} />
                                         </div>
 
                                         <div>
 
-                                            <h2 className="text-base font-semibold text-slate-900">
+                                            <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                                 Patient
                                             </h2>
 
-                                            <p className="mt-0.5 text-xs text-slate-500">
+                                            <p className="mt-0.5 text-xs font-medium text-slate-500 font-['Roboto']">
                                                 Patient information
                                             </p>
 
@@ -772,7 +712,7 @@ function Prediction() {
 
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-5 p-6">
+                                <div className="relative z-10 grid grid-cols-2 gap-6 p-7">
 
                                     <PatientValue
                                         label="Patient name"
@@ -813,23 +753,24 @@ function Prediction() {
                         {/* RISK ASSESSMENT / GAUGE */}
                         {/* ================================================= */}
 
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                            <div className="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-tr from-indigo-50 to-transparent opacity-50 blur-3xl"></div>
 
-                            <div className="border-b border-slate-100 px-6 py-5">
+                            <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
                                 <div className="flex items-center gap-3">
 
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                        <Activity size={19} />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100">
+                                        <Activity size={20} />
                                     </div>
 
                                     <div>
 
-                                        <h2 className="text-base font-semibold text-slate-900">
+                                        <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                             Risk Assessment
                                         </h2>
 
-                                        <p className="mt-0.5 text-xs text-slate-500">
+                                        <p className="mt-0.5 text-xs font-medium text-slate-500 font-['Roboto']">
                                             Model result for the selected condition
                                         </p>
 
@@ -839,7 +780,7 @@ function Prediction() {
 
                             </div>
 
-                            <div className="p-6">
+                            <div className="p-8 sm:p-12 relative z-10 flex flex-col items-center">
 
                                 {/* Gauge */}
 
@@ -852,21 +793,21 @@ function Prediction() {
 
                                 {/* Result */}
 
-                                <div className="mt-5 text-center">
+                                <div className="mt-8 text-center">
 
-                                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 font-['Roboto']">
                                         Assessment Result
                                     </p>
 
                                     <h3
-                                        className={`mt-2 text-3xl font-bold ${riskStyle.textColor}`}
+                                        className={`mt-2 text-4xl font-black font-['Inter'] ${riskStyle.textColor}`}
                                     >
                                         {riskStyle.label}
                                     </h3>
 
-                                    <p className="mt-1 text-sm text-slate-500">
+                                    <p className="mt-2 text-sm text-slate-500 font-['Roboto']">
                                         Risk Class{" "}
-                                        {prediction.class}{" "}
+                                        <strong className="text-slate-700">{prediction.class}</strong>{" "}
                                         / 4
                                     </p>
 
@@ -876,11 +817,11 @@ function Prediction() {
                                 {/* Description */}
 
                                 <div
-                                    className={`mx-auto mt-6 max-w-xl rounded-lg border ${riskStyle.border} ${riskStyle.bg} px-5 py-4 text-center`}
+                                    className={`mx-auto mt-8 max-w-2xl rounded-2xl border ${riskStyle.border} ${riskStyle.bg} p-6 text-center shadow-sm backdrop-blur-sm`}
                                 >
 
                                     <p
-                                        className={`text-sm font-medium ${riskStyle.textColor}`}
+                                        className={`text-base leading-relaxed font-medium ${riskStyle.textColor}`}
                                     >
                                         {getRiskDescription(
                                             prediction.class
@@ -897,34 +838,37 @@ function Prediction() {
                         {/* ================================================= */}
                         {/* DATA QUALITY */}
                         {/* ================================================= */}
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                            <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between bg-slate-50">
+                        {/* ================================================= */}
+                        {/* DATA QUALITY */}
+                        {/* ================================================= */}
+                        <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                            <div className="border-b border-white/40 px-7 py-5 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${dataQuality.score === 100 ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-                                        {dataQuality.score === 100 ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ring-1 ${dataQuality.score === 100 ? 'bg-emerald-50 text-emerald-600 ring-emerald-100' : 'bg-amber-50 text-amber-600 ring-amber-100'}`}>
+                                        {dataQuality.score === 100 ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
                                     </div>
                                     <div>
-                                        <h2 className="text-sm font-semibold text-slate-900">
+                                        <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                             Data Quality
                                         </h2>
                                     </div>
                                 </div>
-                                <div className="text-sm font-medium text-slate-600">
-                                    Available information <span className="ml-3 font-bold text-slate-900 text-lg">{dataQuality.score}%</span>
+                                <div className="text-sm font-medium text-slate-600 font-['Roboto'] bg-white/60 px-4 py-2 rounded-full shadow-sm">
+                                    Available information <span className="ml-2 font-bold text-slate-900 text-lg">{dataQuality.score}%</span>
                                 </div>
                             </div>
                             
-                            <div className="px-6 py-5">
-                                <div className="grid sm:grid-cols-2 gap-y-3 gap-x-8">
+                            <div className="px-7 py-6">
+                                <div className="grid sm:grid-cols-2 gap-y-4 gap-x-10">
                                     {dataQuality.details.map((item, idx) => (
-                                        <div key={idx} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0 last:pb-0 sm:last:border-b sm:last:pb-2">
-                                            <span className="text-sm text-slate-600">{item.name}</span>
+                                        <div key={idx} className="flex items-center justify-between border-b border-white/40 pb-3 last:border-0 last:pb-0 sm:last:border-b sm:last:pb-3">
+                                            <span className="text-sm font-medium text-slate-700 font-['Roboto']">{item.name}</span>
                                             {item.present ? (
-                                                <span className="flex items-center justify-center font-bold text-green-600">
+                                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-600 shadow-sm">
                                                     ✓
                                                 </span>
                                             ) : (
-                                                <span className="flex items-center justify-center font-bold text-slate-300">
+                                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-400 shadow-sm">
                                                     ✕
                                                 </span>
                                             )}
@@ -932,9 +876,9 @@ function Prediction() {
                                     ))}
                                 </div>
                                 {dataQuality.score < 100 && (
-                                    <div className="mt-5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                                        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                                        <p><strong>Assessment made with incomplete information.</strong> Adding missing data (like laboratory or longitudinal records) may improve model accuracy and provide better insights.</p>
+                                    <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-amber-50/80 p-5 text-sm text-amber-800 backdrop-blur-sm">
+                                        <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+                                        <p className="leading-relaxed font-['Roboto']"><strong>Assessment made with incomplete information.</strong> Adding missing data (like laboratory or longitudinal records) may improve model accuracy and provide better insights.</p>
                                     </div>
                                 )}
                             </div>
@@ -945,44 +889,46 @@ function Prediction() {
                         {/* RESULT EXPLANATION (EXPLAINABLE AI) */}
                         {/* ================================================= */}
                         
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                            <div className="border-b border-slate-100 px-6 py-5 bg-slate-50">
+                        <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                            <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-gradient-to-bl from-pink-200 to-rose-300 opacity-10 blur-3xl"></div>
+
+                            <div className="relative z-10 border-b border-white/40 px-7 py-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-100 text-pink-600">
-                                        <Stethoscope size={19} />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 shadow-sm ring-1 ring-pink-100">
+                                        <Stethoscope size={20} />
                                     </div>
                                     <div>
-                                        <h2 className="text-base font-semibold text-slate-900">
+                                        <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                             Why this result?
                                         </h2>
-                                        <p className="mt-0.5 text-xs text-slate-500">
+                                        <p className="mt-0.5 text-xs font-medium text-slate-500 font-['Roboto']">
                                             Key factors contributing to the {prediction.label} risk assessment
                                         </p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="p-6">
-                                <div className="space-y-6">
+                            <div className="relative z-10 p-7">
+                                <div className="space-y-7">
                                     {prediction.explanationDetails.map((detail, idx) => (
-                                        <div key={idx} className="relative">
-                                            <div className="flex justify-between items-end mb-1">
-                                                <span className="text-sm font-semibold text-slate-800">{detail.feature}</span>
-                                                <span className="text-sm font-medium text-slate-900">{detail.value}</span>
+                                        <div key={idx} className="group relative">
+                                            <div className="flex justify-between items-end mb-2">
+                                                <span className="text-sm font-bold text-slate-800 font-['Inter']">{detail.feature}</span>
+                                                <span className="text-sm font-semibold text-slate-900 font-['Roboto'] bg-white/60 px-3 py-1 rounded-lg shadow-sm border border-slate-100">{detail.value}</span>
                                             </div>
                                             
-                                            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                                            <div className="h-3 w-full bg-white/50 rounded-full overflow-hidden flex shadow-inner border border-slate-100">
                                                 <div 
-                                                    className={`h-full ${detail.contribution.includes('High') ? 'bg-rose-500' : 'bg-orange-400'}`}
+                                                    className={`h-full transition-all duration-1000 ${detail.contribution.includes('High') ? 'bg-gradient-to-r from-rose-400 to-rose-500' : 'bg-gradient-to-r from-amber-400 to-orange-400'}`}
                                                     style={{ width: `${detail.percentage}%` }}
                                                 ></div>
                                             </div>
                                             
-                                            <div className="flex justify-between items-center mt-1.5">
-                                                <span className="text-xs font-medium text-slate-500">
+                                            <div className="flex justify-between items-center mt-2">
+                                                <span className="text-xs font-semibold text-slate-500 font-['Roboto']">
                                                     Normal baseline: {detail.normal_median}
                                                 </span>
-                                                <span className={`text-xs font-medium ${detail.contribution.includes('High') ? 'text-rose-600' : 'text-orange-600'}`}>
+                                                <span className={`text-xs font-bold uppercase tracking-wider ${detail.contribution.includes('High') ? 'text-rose-600' : 'text-orange-600'}`}>
                                                     {detail.contribution}
                                                 </span>
                                             </div>
@@ -990,9 +936,14 @@ function Prediction() {
                                     ))}
                                 </div>
                                 
-                                <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
-                                    <p className="text-sm leading-6 text-slate-600">
-                                        <strong>Clinical Note:</strong> The model identified significant deviations in {prediction.explanationDetails[0].feature} and {prediction.explanationDetails[2].feature}, which strongly correlate with high-risk clinical deterioration for the selected condition.
+                                <div className="mt-8 rounded-2xl border border-indigo-200/60 bg-indigo-50/80 p-5 backdrop-blur-sm">
+                                    <p className="text-sm leading-relaxed text-slate-700 font-['Roboto']">
+                                        <strong className="text-indigo-800">Clinical Note:</strong> {prediction.class >= 3 
+                                            ? `The model identified significant deviations in ${prediction.explanationDetails.slice(0, 2).map(d => d.feature).join(' and ')}, which strongly correlate with high-risk clinical deterioration for the selected condition.`
+                                            : prediction.class === 2 
+                                                ? `The model identified moderate deviations in ${prediction.explanationDetails.slice(0, 2).map(d => d.feature).join(' and ')}. Close monitoring is recommended.`
+                                                : `All key indicators, including ${prediction.explanationDetails.slice(0, 2).map(d => d.feature).join(' and ')}, appear to be within stable ranges for the selected condition.`
+                                        }
                                     </p>
                                 </div>
                             </div>
@@ -1003,23 +954,24 @@ function Prediction() {
                         {/* VITAL SIGNS */}
                         {/* ================================================= */}
 
-                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <section className="mb-8 relative overflow-hidden rounded-3xl border border-white/50 bg-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+                            <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-gradient-to-tr from-blue-200 to-indigo-300 opacity-10 blur-3xl"></div>
 
-                            <div className="border-b border-slate-100 px-6 py-5">
+                            <div className="relative z-10 border-b border-white/40 px-7 py-6">
 
                                 <div className="flex items-center gap-3">
 
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
-                                        <HeartPulse size={19} />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shadow-sm ring-1 ring-blue-100">
+                                        <HeartPulse size={20} />
                                     </div>
 
                                     <div>
 
-                                        <h2 className="text-base font-semibold text-slate-900">
+                                        <h2 className="text-lg font-bold text-slate-900 font-['Inter']">
                                             Recorded Vital Signs
                                         </h2>
 
-                                        <p className="mt-0.5 text-xs text-slate-500">
+                                        <p className="mt-0.5 text-xs font-medium text-slate-500 font-['Roboto']">
                                             Values submitted for this assessment
                                         </p>
 
@@ -1029,7 +981,7 @@ function Prediction() {
 
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3 lg:grid-cols-6">
+                            <div className="relative z-10 grid grid-cols-2 gap-5 p-7 sm:grid-cols-3 lg:grid-cols-6">
 
                                 <VitalValue
                                     label="Heart rate"
@@ -1750,13 +1702,13 @@ function RiskGauge({ riskClass }) {
 
 function PatientValue({ label, value }) {
     return (
-        <div>
+        <div className="group rounded-2xl bg-white/50 p-4 shadow-sm ring-1 ring-slate-200/50 backdrop-blur-sm transition-all hover:bg-white/80 hover:shadow-md">
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-['Roboto']">
                 {label}
             </p>
 
-            <p className="mt-1 text-sm font-medium text-slate-800">
+            <p className="mt-1.5 text-base font-medium text-slate-900 font-['Inter']">
                 {value || "—"}
             </p>
 
@@ -1777,19 +1729,22 @@ function VitalValue({
     unit,
 }) {
     return (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="group rounded-2xl bg-white/50 p-4 shadow-sm ring-1 ring-slate-200/50 backdrop-blur-sm transition-all hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between">
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-['Roboto']">
                 {label}
             </p>
 
-            <p className="mt-2 text-lg font-semibold text-slate-900">
-                {value || "—"}
-            </p>
-
-            <p className="mt-0.5 text-xs text-slate-500">
-                {unit}
-            </p>
+            <div className="mt-2 font-['Inter'] flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-slate-900">
+                    {value || "—"}
+                </span>
+                {value && (
+                    <span className="text-sm font-medium text-slate-500">
+                        {unit}
+                    </span>
+                )}
+            </div>
 
         </div>
     );

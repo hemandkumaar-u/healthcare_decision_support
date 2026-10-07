@@ -34,6 +34,8 @@ function Sidebar() {
     ];
 
     const handleLogout = () => {
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
         navigate("/login");
     };
 
