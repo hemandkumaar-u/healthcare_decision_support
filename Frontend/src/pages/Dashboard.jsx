@@ -8,38 +8,32 @@ import {
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 function Dashboard() {
     const navigate = useNavigate();
+    const [recentAnalyses, setRecentAnalyses] = useState([]);
 
-    // Temporary data.
-    // Later this will come from the backend.
-    const recentAnalyses = [
-        {
-            id: "PT-00124",
-            patient: "Arun Kumar",
-            condition: "Pneumonia",
-            risk: 78,
-            level: "High",
-            date: "Today, 10:32 AM",
-        },
-        {
-            id: "PT-00123",
-            patient: "Priya S",
-            condition: "Heart Attack",
-            risk: 54,
-            level: "Moderate",
-            date: "Today, 09:15 AM",
-        },
-        {
-            id: "PT-00122",
-            patient: "Rahul M",
-            condition: "Dengue",
-            risk: 21,
-            level: "Low",
-            date: "Yesterday, 04:40 PM",
-        },
-    ];
+    useEffect(() => {
+        const fetchPatients = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/patients");
+                const formattedData = response.data.map(patient => ({
+                    id: `PT-${patient._id.substring(patient._id.length - 5).toUpperCase()}`,
+                    patient: patient.name || "Unknown",
+                    condition: "General Assessment",
+                    risk: patient.riskAssessment?.riskLevel === "High" ? 85 : patient.riskAssessment?.riskLevel === "Medium" ? 55 : patient.riskAssessment?.riskLevel === "Low" ? 15 : 0,
+                    level: patient.riskAssessment?.riskLevel || "Unknown",
+                    date: new Date(patient.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                }));
+                setRecentAnalyses(formattedData.reverse());
+            } catch (error) {
+                console.error("Error fetching analyses:", error);
+            }
+        };
+        fetchPatients();
+    }, []);
 
     const getRiskStyle = (level) => {
         switch (level) {
