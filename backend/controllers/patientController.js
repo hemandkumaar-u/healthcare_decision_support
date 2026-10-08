@@ -43,7 +43,7 @@ exports.createPatient = async (req, res) => {
 
 exports.getPatient = async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id);
+    const patient = await Patient.findById(req.params.id).lean();
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -55,7 +55,7 @@ exports.getPatient = async (req, res) => {
 
 exports.getAllPatients = async (req, res) => {
   try {
-    const patients = await Patient.find();
+    const patients = await Patient.find().lean();
     res.json(patients);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching patients', error: error.message });

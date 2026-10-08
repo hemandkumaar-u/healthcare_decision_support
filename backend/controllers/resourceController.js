@@ -12,7 +12,7 @@ exports.createResource = async (req, res) => {
 
 exports.getResource = async (req, res) => {
   try {
-    const resource = await Resource.findById(req.params.id);
+    const resource = await Resource.findById(req.params.id).lean();
     if (!resource) {
       return res.status(404).json({ message: 'Resource not found' });
     }
