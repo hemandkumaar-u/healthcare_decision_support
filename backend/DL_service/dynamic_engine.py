@@ -53,6 +53,13 @@ for condition in df_history[condition_col].dropna().unique():
         'has_data': True
     }
 
+# Add general stats
+condition_stats['general'] = {
+    'medians': df_history[numeric_features].median().to_dict(),
+    'important_features': numeric_features[:5] if len(numeric_features) >= 5 else numeric_features,
+    'has_data': True
+}
+
 # Delete df_history to free memory (improves space complexity massively)
 del df_history
 

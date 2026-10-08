@@ -74,23 +74,22 @@ def process_and_predict(patient_data, condition_name):
         for feature, value in patient_data.items():
             if feature in numeric_features and feature in medians:
                 historical_median = medians[feature]
-                if pd.notna(historical_median) and historical_median != 0:
+                if pd.notna(historical_median) and historical_median != 0 and value != 0:
                     deviation = abs((value - historical_median) / historical_median)
-                    if deviation > 0.10:
-                        level = "High" if deviation > 0.3 else ("Moderate" if deviation > 0.15 else "Low")
-                        percent = min(100, int(deviation * 150)) # Scale up deviation for UI
+                    level = "High" if deviation > 0.3 else ("Moderate" if deviation > 0.15 else "Low")
+                    percent = min(100, int(deviation * 150)) # Scale up deviation for UI
+                    
+                    if risk_level >= 3:
+                        percent = min(100, percent + 20)
                         
-                        if risk_level >= 3:
-                            percent = min(100, percent + 20)
-                            
-                        explanation_details.append({
-                            "feature": feature.replace('_', ' ').title(),
-                            "value": value,
-                            "contribution": f"{level} contribution",
-                            "percentage": percent,
-                            "direction": "HIGHER" if value > historical_median else "LOWER",
-                            "normal_median": round(historical_median, 1)
-                        })
+                    explanation_details.append({
+                        "feature": feature.replace('_', ' ').title(),
+                        "value": value,
+                        "contribution": f"{level} contribution",
+                        "percentage": percent,
+                        "direction": "HIGHER" if value > historical_median else "LOWER",
+                        "normal_median": round(historical_median, 1)
+                    })
                         
     explanation_details.sort(key=lambda x: x["percentage"], reverse=True)
     explanation_str = "High risk detected due to significant clinical deviations." if explanation_details and risk_level >= 2 else f"Prediction based on provided data for {condition_name}."
@@ -110,8 +109,9 @@ def predict_risk(patient: dict):
         'respiratory_rate': vitals.get('RR', 0)
     }
     
-    # We will use a default condition name 'general' if none is provided
-    condition_name = 'general'
+    condition_name = patient.get('condition')
+    if not condition_name:
+        condition_name = 'general'
     
     risk_num, explanation, explanation_details = process_and_predict(doctor_inputs, condition_name)
     
