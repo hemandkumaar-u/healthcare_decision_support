@@ -21,8 +21,10 @@ This service is responsible for making the patient risk predictions using our op
    pip install -r requirements.txt
    ```
 3. Run the FastAPI server:
+  
    ```bash
-   python app.py
+   C:\Users\meena\AppData\Local\Programs\Python\Python313\python.exe -m uvicorn app:app --port 8000
+
    ```
    *The DL service will run on `http://localhost:8000`.*
 
