@@ -9,10 +9,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 warnings.filterwarnings('ignore')
 
 print("1. Loading Dynamic Clinical Engine and Historical Data...")
-# Load a sample for the dynamic dictionary
-df_history = pd.read_csv("train.csv", nrows=50000, on_bad_lines='skip', engine='python')
 
-# We strictly exclude hospital, location, and calendar data so the AI only looks at body metrics
 exclude_cols = [
     'adverse_outcome', 'disposition', 'readmission_30d', 
     'arrival_year', 'arrival_month', 'arrival_day', 
@@ -22,8 +19,10 @@ exclude_cols = [
     'hospital_id', 'facility_name', 'zipcode'
 ]
 
-condition_col = 'chief_complaint' 
+# Read just enough to get columns and compute stats
+df_history = pd.read_csv("train.csv", nrows=50000, on_bad_lines='skip', engine='python')
 
+condition_col = 'chief_complaint' 
 if condition_col not in df_history.columns:
     string_cols = df_history.select_dtypes(include=['object']).columns
     if len(string_cols) > 0:
@@ -32,6 +31,31 @@ if condition_col not in df_history.columns:
 feature_cols = [c for c in df_history.columns if c not in exclude_cols and c != condition_col]
 numeric_features = df_history[feature_cols].select_dtypes(include=['int64', 'float64']).columns.tolist()
 
+print("Precomputing historical statistics to optimize space and time complexity...")
+condition_stats = {}
+for condition in df_history[condition_col].dropna().unique():
+    cond_data = df_history[df_history[condition_col] == condition]
+    cond_lower = str(condition).lower()
+    
+    # Calculate median
+    medians = cond_data[numeric_features].median().to_dict()
+    
+    # Calculate feature importance based on variance
+    var = cond_data[numeric_features].var()
+    if pd.isna(var).all():
+        important_features = numeric_features[:5] if len(numeric_features) >= 5 else numeric_features
+    else:
+        important_features = var.sort_values(ascending=False).head(5).index.tolist()
+        
+    condition_stats[cond_lower] = {
+        'medians': medians,
+        'important_features': important_features,
+        'has_data': True
+    }
+
+# Delete df_history to free memory (improves space complexity massively)
+del df_history
+
 print("2. Loading Trained GRU Model...")
 try:
     model = tf.keras.models.load_model("gru_patient_risk_model.keras")
@@ -39,32 +63,23 @@ except Exception as e:
     print(f"Error loading model: {e}")
     exit()
 
-def get_dynamic_requirements(condition_name, df, num_requirements=5):
-    if condition_col in df.columns:
-        condition_data = df[df[condition_col].astype(str).str.lower() == condition_name.lower()]
-    else:
-        condition_data = pd.DataFrame()
+def get_dynamic_requirements(condition_name, num_requirements=5):
+    cond = condition_name.lower()
+    if cond in condition_stats:
+        return condition_stats[cond]['important_features'][:num_requirements]
+    return numeric_features[:num_requirements]
 
-    if condition_data.empty:
-        return numeric_features[:5] if len(numeric_features) >= 5 else numeric_features
+def generate_dynamic_explanation(patient_data, condition_name, risk_score):
+    cond = condition_name.lower()
     
-    # Calculate which biological features vary the most for this condition
-    feature_importance = condition_data[numeric_features].var().sort_values(ascending=False)
-    return feature_importance.head(num_requirements).index.tolist()
-
-def generate_dynamic_explanation(patient_data, condition_name, df, risk_score):
-    if condition_col not in df.columns:
-        return
-
-    condition_data = df[df[condition_col].astype(str).str.lower() == condition_name.lower()]
-    
-    if risk_score >= 2 and not condition_data.empty:
+    if risk_score >= 2 and cond in condition_stats:
         print("\n--- AI EXPLANATION (DATA-DRIVEN) ---")
         print(f"Comparing patient to historical baseline for {condition_name.title()}:")
         
+        medians = condition_stats[cond]['medians']
         for feature, value in patient_data.items():
-            if feature in numeric_features and feature in condition_data.columns:
-                historical_median = condition_data[feature].median()
+            if feature in numeric_features and feature in medians:
+                historical_median = medians[feature]
                 if pd.notna(historical_median) and historical_median != 0:
                     deviation = abs((value - historical_median) / historical_median)
                     if deviation > 0.20:
@@ -76,7 +91,7 @@ def process_patient_encounter(doctor_inputs, condition_name, dl_model):
     print(f"INITIATING UNLIMITED SCALE ANALYSIS: {condition_name.upper()}")
     print(f"{'='*60}")
     
-    required_params = get_dynamic_requirements(condition_name, df_history)
+    required_params = get_dynamic_requirements(condition_name)
     missing_params = [p for p in required_params if p not in doctor_inputs]
     
     if missing_params:
@@ -125,8 +140,7 @@ def process_patient_encounter(doctor_inputs, condition_name, dl_model):
     }
     print(recommendations.get(risk_level, "Unknown Status"))
     
-    generate_dynamic_explanation(doctor_inputs, condition_name, df_history, risk_level)
-
+    generate_dynamic_explanation(doctor_inputs, condition_name, risk_level)
 
 if __name__ == "__main__":
     # Test Scenario 1: Sepsis
