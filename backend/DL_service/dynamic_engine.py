@@ -63,9 +63,9 @@ condition_stats['general'] = {
 # Delete df_history to free memory (improves space complexity massively)
 del df_history
 
-print("2. Loading Trained GRU Model...")
+print("2. Loading Trained Deep Tabular Model...")
 try:
-    model = tf.keras.models.load_model("gru_patient_risk_model.keras")
+    model = tf.keras.models.load_model("tabular_patient_risk_model.keras")
 except Exception as e:
     print(f"Error loading model: {e}")
     exit()
@@ -126,10 +126,9 @@ def process_patient_encounter(doctor_inputs, condition_name, dl_model):
         padded_array[0, :input_array.shape[1]] = input_array
     else:
         padded_array = input_array[:, :expected_features]
-
-    gru_input = np.reshape(padded_array, (1, 1, expected_features))
+    tabular_input = np.reshape(padded_array, (1, 1, expected_features))
     
-    raw_probability = dl_model.predict(gru_input, verbose=0)[0][0]
+    raw_probability = dl_model.predict(tabular_input, verbose=0)[0][0]
     risk_level = int(np.round(raw_probability * 4))
     
     print("=== CLINICAL ANALYSIS REPORT ===")

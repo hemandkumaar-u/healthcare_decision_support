@@ -12,7 +12,8 @@ import {
     Pill,
     Info,
     Server,
-    Users
+    Users,
+    Mail
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -118,20 +119,17 @@ function About() {
                                         </h2>
 
                                         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-                                            MedRisk AI is a decision-support prototype
-                                            designed to analyze available patient
-                                            information and provide a risk
-                                            classification for a selected health
-                                            condition.
+                                            MedRisk AI is an advanced clinical decision-support system 
+                                            designed to analyze patient vitals and provide highly accurate risk 
+                                            classifications. Powered by a Deep Tabular Neural Network trained 
+                                            on 1,000,000 patient records, it ensures robust predictive capabilities.
                                         </p>
 
                                         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                                            The system organizes patient information,
-                                            processes the available clinical data
-                                            through a machine learning model, and
-                                            presents the resulting risk class in a
-                                            form that can be reviewed by a healthcare
-                                            professional.
+                                            Beyond raw predictions, the system utilizes a powerful Explainable AI (XAI) 
+                                            engine to dynamically calculate disease-specific baselines. This mathematically 
+                                            justifies every risk score, ensuring healthcare professionals retain full 
+                                            transparency and clinical autonomy over the AI's recommendations.
                                         </p>
 
                                     </div>
@@ -215,8 +213,8 @@ function About() {
                                     icon={
                                         <Brain size={20} />
                                     }
-                                    title="Run assessment"
-                                    description="The available information is processed by the machine learning model."
+                                    title="Deep Tabular Inference"
+                                    description="Vitals are processed by the Deep Tabular Neural Network to predict the risk class."
                                 />
 
                                 <ProcessCard
@@ -224,8 +222,8 @@ function About() {
                                     icon={
                                         <Activity size={20} />
                                     }
-                                    title="Review result"
-                                    description="Review the risk class, missing information and model explanation."
+                                    title="XAI & Reporting"
+                                    description="Review the AI's explanation, prescribe medications, and send an automated clinical email report."
                                 />
 
                             </div>
@@ -457,6 +455,51 @@ function About() {
 
 
                         {/* ================================================= */}
+                        {/* AUTOMATED REPORTING */}
+                        {/* ================================================= */}
+
+                        <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                            <SectionHeader
+                                icon={
+                                    <Mail size={19} />
+                                }
+                                title="Automated Clinical Reporting"
+                                subtitle="Seamless email delivery of patient assessments via AWS SES"
+                            />
+
+                            <div className="p-6">
+
+                                <div className="flex flex-col gap-5 md:flex-row md:items-start">
+
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                                        <Mail size={21} />
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-slate-800">
+                                            Comprehensive Email Generation
+                                        </h3>
+                                        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                                            Once an assessment is reviewed and medications are prescribed, 
+                                            the platform automatically compiles the patient's demographics, 
+                                            vital signs, Explainable AI insights, and custom prescription 
+                                            instructions into a secure, highly-formatted PDF report.
+                                        </p>
+                                        <p className="mt-3 text-xs leading-5 text-slate-500">
+                                            The clinical report is then securely dispatched directly to the 
+                                            patient's email inbox using AWS Simple Email Service (SES), 
+                                            ensuring high deliverability and medical transparency.
+                                        </p>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </section>
+
+                        {/* ================================================= */}
                         {/* SYSTEM APPROACH */}
                         {/* ================================================= */}
 
@@ -466,7 +509,7 @@ function About() {
                                 icon={
                                     <Brain size={19} />
                                 }
-                                title="Machine learning component"
+                                title="Deep Tabular Neural Network & XAI"
                                 subtitle="Role of the model within the decision-support workflow"
                             />
 
@@ -475,15 +518,14 @@ function About() {
                                 <div>
 
                                     <h3 className="text-sm font-semibold text-slate-800">
-                                        Condition-specific assessment
+                                        Condition-specific Explainability
                                     </h3>
 
                                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                                        The system is designed around a selected
-                                        health condition. Patient information is
-                                        submitted for that condition and the
-                                        model returns the corresponding risk
-                                        classification.
+                                        The system evaluates real-time vital signs and historical medical data. 
+                                        The Explainable AI (XAI) engine dynamically calculates baseline medians for 
+                                        the specific health condition, mapping exactly how each deviated vital sign 
+                                        impacts the final prediction.
                                     </p>
 
                                 </div>
@@ -495,7 +537,7 @@ function About() {
                                     </h3>
 
                                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                                        The model result is presented as an aid
+                                        The model result is presented as an explainable aid
                                         for reviewing patient information. It is
                                         not intended to independently diagnose a
                                         patient or replace professional medical

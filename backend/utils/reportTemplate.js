@@ -53,6 +53,7 @@ const generateReportHtml = (patient, name, assessment, patientData = {}, medicat
                             <th>Dosage</th>
                             <th>Frequency</th>
                             <th>Duration</th>
+                            <th>Instructions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -62,6 +63,7 @@ const generateReportHtml = (patient, name, assessment, patientData = {}, medicat
                                 <td>${med.dosage || 'N/A'}</td>
                                 <td>${med.frequency || 'N/A'}</td>
                                 <td>${med.duration || 'N/A'}</td>
+                                <td>${med.instructions || 'N/A'}</td>
                             </tr>
                         `).join('')}
                     </tbody>

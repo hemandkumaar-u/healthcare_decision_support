@@ -1,0 +1,5 @@
+condition,date_diagnosed,status,treatment,notes
+Hypertension,2015-05-12,Active,Lisinopril 10mg,Well controlled with medication. Routine ECG normal. No history of chest pain.
+Hyperlipidemia,2018-11-04,Active,Atorvastatin 20mg,Cholesterol levels within target range.
+Asthma,2010-02-15,Inactive,Albuterol inhaler PRN,No exacerbations in 10 years.
+Appendicitis,2012-08-20,Resolved,Appendectomy,Uncomplicated recovery.

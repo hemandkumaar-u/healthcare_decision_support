@@ -957,7 +957,7 @@ function Prediction() {
                                             
                                             <div className="h-3 w-full bg-white/50 rounded-full overflow-hidden flex shadow-inner border border-slate-100">
                                                 <div 
-                                                    className={`h-full transition-all duration-1000 ${detail.contribution.includes('High') ? 'bg-gradient-to-r from-rose-400 to-rose-500' : 'bg-gradient-to-r from-amber-400 to-orange-400'}`}
+                                                    className={`h-full transition-all duration-1000 ${detail.contribution.includes('High') ? 'bg-gradient-to-r from-rose-400 to-rose-500' : detail.contribution.includes('Moderate') ? 'bg-gradient-to-r from-amber-400 to-orange-400' : 'bg-gradient-to-r from-emerald-400 to-teal-400'}`}
                                                     style={{ width: `${detail.percentage}%` }}
                                                 ></div>
                                             </div>
@@ -966,7 +966,7 @@ function Prediction() {
                                                 <span className="text-xs font-semibold text-slate-500 font-['Roboto']">
                                                     Normal baseline: {detail.normal_median}
                                                 </span>
-                                                <span className={`text-xs font-bold uppercase tracking-wider ${detail.contribution.includes('High') ? 'text-rose-600' : 'text-orange-600'}`}>
+                                                <span className={`text-xs font-bold uppercase tracking-wider ${detail.contribution.includes('High') ? 'text-rose-600' : detail.contribution.includes('Moderate') ? 'text-orange-600' : 'text-emerald-600'}`}>
                                                     {detail.contribution}
                                                 </span>
                                             </div>
