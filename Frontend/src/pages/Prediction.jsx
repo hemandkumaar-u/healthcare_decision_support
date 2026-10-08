@@ -168,134 +168,79 @@ function Prediction() {
      * 4 = Critical
      */
 
-    const prediction = useMemo(() => {
-        // Calculate dynamic risk based on inputs to simulate the backend model
-        let baseRisk = 1; // Mild by default
-        let explanationDetails = [];
-        
-        // Heart Rate checks
-        const hr = Number(formData?.heartRate) || 80;
-        if (hr > 100 || hr < 60) {
-            baseRisk = Math.max(baseRisk, hr > 120 ? 3 : 2);
-            explanationDetails.push({
-                feature: "Heart Rate",
-                value: `${hr} bpm`,
-                contribution: hr > 120 ? "High contribution" : "Moderate contribution",
-                percentage: hr > 120 ? 80 : 50,
-                direction: hr > 80 ? "HIGHER" : "LOWER",
-                normal_median: 80
-            });
-        }
-        
-        // SpO2 checks
-        const spo2 = Number(formData?.spo2) || 98;
-        if (spo2 < 95) {
-            baseRisk = Math.max(baseRisk, spo2 < 90 ? 4 : 3);
-            explanationDetails.push({
-                feature: "SpO₂",
-                value: `${spo2}%`,
-                contribution: spo2 < 90 ? "Critical contribution" : "High contribution",
-                percentage: spo2 < 90 ? 95 : 75,
-                direction: "LOWER",
-                normal_median: 98
-            });
-        }
-        
-        // Temperature checks
-        const temp = Number(formData?.temperature) || 37.0;
-        if (temp > 38.0 || temp < 36.0) {
-            baseRisk = Math.max(baseRisk, temp > 39.0 ? 3 : 2);
-            explanationDetails.push({
-                feature: "Temperature",
-                value: `${temp}°C`,
-                contribution: temp > 39.0 ? "High contribution" : "Moderate contribution",
-                percentage: temp > 39.0 ? 70 : 45,
-                direction: temp > 37 ? "HIGHER" : "LOWER",
-                normal_median: 37.0
-            });
-        }
+    const [prediction, setPrediction] = useState(null);
+    const [isLoadingPrediction, setIsLoadingPrediction] = useState(true);
 
-        // Blood Pressure checks
-        const sysBP = Number(formData?.systolicBP || formData?.systolicBp);
-        if (sysBP && (sysBP > 140 || sysBP < 90)) {
-            baseRisk = Math.max(baseRisk, sysBP >= 180 || sysBP <= 80 ? 4 : (sysBP >= 160 ? 3 : 2));
-            explanationDetails.push({
-                feature: "Systolic BP",
-                value: `${sysBP} mmHg`,
-                contribution: sysBP >= 180 || sysBP <= 80 ? "Critical contribution" : (sysBP >= 160 ? "High contribution" : "Moderate contribution"),
-                percentage: sysBP >= 180 || sysBP <= 80 ? 90 : (sysBP >= 160 ? 75 : 55),
-                direction: sysBP > 120 ? "HIGHER" : "LOWER",
-                normal_median: 120
-            });
-        }
+    useEffect(() => {
+        if (!formData) return;
 
-        // Respiratory Rate checks
-        const rr = Number(formData?.respiratoryRate);
-        if (rr && (rr > 22 || rr < 12)) {
-            baseRisk = Math.max(baseRisk, rr >= 30 || rr <= 8 ? 4 : (rr >= 24 ? 3 : 2));
-            explanationDetails.push({
-                feature: "Respiratory Rate",
-                value: `${rr} /min`,
-                contribution: rr >= 30 || rr <= 8 ? "Critical contribution" : (rr >= 24 ? "High contribution" : "Moderate contribution"),
-                percentage: rr >= 30 || rr <= 8 ? 85 : (rr >= 24 ? 70 : 50),
-                direction: rr > 16 ? "HIGHER" : "LOWER",
-                normal_median: 16
-            });
-        }
+        const fetchPrediction = async () => {
+            setIsLoadingPrediction(true);
+            try {
+                const response = await fetch('http://localhost:8000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        age: Number(formData.age) || 0,
+                        vitalSigns: JSON.stringify({
+                            HR: Number(formData.heartRate) || 0,
+                            BP_SYS: Number(formData.systolicBP || formData.systolicBp) || 0,
+                            BP_DIA: Number(formData.diastolicBP || formData.diastolicBp) || 0,
+                            TEMP: Number(formData.temperature) || 0,
+                            SPO2: Number(formData.spo2) || 0,
+                            RR: Number(formData.respiratoryRate) || 0
+                        })
+                    })
+                });
 
-        // Incorporate Uploaded Files into the decision!
-        if (files?.laboratory) {
-            baseRisk = Math.min(4, baseRisk + 1); // Labs revealed hidden risks
-            explanationDetails.push({
-                feature: "Lab Results (Uploaded)",
-                value: "Abnormal Markers",
-                contribution: "High contribution",
-                percentage: 85,
-                direction: "HIGHER",
-                normal_median: "Normal"
-            });
-        }
-        
-        if (files?.longitudinal) {
-            explanationDetails.push({
-                feature: "Historical Trend (Uploaded)",
-                value: "Deteriorating",
-                contribution: "Moderate contribution",
-                percentage: 60,
-                direction: "WORSE",
-                normal_median: "Stable"
-            });
-        }
-        
-        // Default explanation if everything is normal
-        if (explanationDetails.length === 0) {
-            explanationDetails.push({
-                feature: "All Vitals",
-                value: "Within normal limits",
-                contribution: "Low contribution",
-                percentage: 10,
-                direction: "NORMAL",
-                normal_median: "Expected"
-            });
-            baseRisk = 0; // Normal
-        }
-        
-        const labels = {
-            0: "Normal",
-            1: "Mild",
-            2: "Moderate",
-            3: "Severe",
-            4: "Critical"
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    const riskMap = {
+                        "Low": 1,
+                        "Medium": 2,
+                        "High": 3,
+                        "Critical": 4,
+                        "Unknown": 1
+                    };
+                    const riskClass = riskMap[data.riskLevel] || 1;
+                    
+                    const labels = {
+                        0: "Normal",
+                        1: "Mild",
+                        2: "Moderate",
+                        3: "Severe",
+                        4: "Critical"
+                    };
+
+                    setPrediction({
+                        class: riskClass,
+                        label: labels[riskClass],
+                        explanationDetails: data.explanationDetails || []
+                    });
+                } else {
+                    console.error("Failed to fetch prediction");
+                    setPrediction({
+                        class: 1,
+                        label: "Mild",
+                        explanationDetails: []
+                    });
+                }
+            } catch (error) {
+                console.error("Error calling AI model:", error);
+                setPrediction({
+                    class: 1,
+                    label: "Mild",
+                    explanationDetails: []
+                });
+            } finally {
+                setIsLoadingPrediction(false);
+            }
         };
-        
-        // Sort explanations by percentage descending
-        explanationDetails.sort((a, b) => b.percentage - a.percentage);
 
-        return {
-            class: baseRisk,
-            label: labels[baseRisk],
-            explanationDetails
-        };
+        fetchPrediction();
     }, [formData, files]);
 
 
@@ -651,7 +596,7 @@ function Prediction() {
      * =========================================================
      */
      
-    if (!formData || !prediction) {
+    if (!formData) {
         return (
             <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
                 <Sidebar />
@@ -679,6 +624,31 @@ function Prediction() {
                                 >
                                     New Analysis
                                 </button>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        );
+    }
+
+    if (isLoadingPrediction || !prediction) {
+        return (
+            <div className="min-h-screen bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-slate-100 via-indigo-50 to-blue-100 font-sans">
+                <Sidebar />
+                <div className="lg:pl-64">
+                    <Header />
+                    <main className="flex min-h-[calc(100vh-64px)] items-center justify-center px-5 py-10">
+                        <div className="flex flex-col items-center gap-6 p-10 bg-white/40 rounded-3xl border border-white/50 shadow-sm backdrop-blur-xl">
+                            <div className="relative flex items-center justify-center">
+                                <div className="absolute inset-0 rounded-full blur-xl bg-indigo-400 opacity-20 animate-pulse"></div>
+                                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-50 to-blue-50 shadow-inner border border-white/60">
+                                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></div>
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <h2 className="text-xl font-bold text-slate-900 font-['Inter']">Analyzing Data</h2>
+                                <p className="mt-2 text-sm text-slate-500 font-['Roboto']">The Deep Tabular AI model is calculating risk scores...</p>
                             </div>
                         </div>
                     </main>
@@ -1534,11 +1504,12 @@ function Prediction() {
 
                             <button
                                 type="button"
-                                onClick={handlePrint}
+                                onClick={handleDownloadPdf}
+                                disabled={isDownloading}
                                 className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 flex items-center justify-center gap-2"
                             >
                                 <Download size={16} />
-                                Download PDF
+                                {isDownloading ? 'Downloading...' : 'Download PDF'}
                             </button>
 
                             <button
