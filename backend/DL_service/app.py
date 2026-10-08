@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from dynamic_engine import model, df_history, feature_cols, get_dynamic_requirements, condition_col
+from dynamic_engine import model, condition_stats, feature_cols, numeric_features
 import warnings
 import os
 
@@ -39,10 +39,6 @@ def process_and_predict(patient_data, condition_name):
         if key in input_df.columns:
             input_df.at[0, key] = value
             
-    # Assuming dynamic_engine's numeric_features variable
-    # We will compute numeric_features based on our feature_cols
-    numeric_features = df_history[feature_cols].select_dtypes(include=['int64', 'float64']).columns.tolist()
-
     for col in numeric_features:
         input_df[col] = pd.to_numeric(input_df[col], errors='coerce').fillna(0)
 
@@ -62,12 +58,13 @@ def process_and_predict(patient_data, condition_name):
     
     # Generate explanation string
     explanation_details = []
-    condition_data = df_history[df_history[condition_col].astype(str).str.lower() == condition_name.lower()] if condition_col in df_history.columns else pd.DataFrame()
+    cond = condition_name.lower()
     
-    if not condition_data.empty:
+    if cond in condition_stats:
+        medians = condition_stats[cond]['medians']
         for feature, value in patient_data.items():
-            if feature in numeric_features and feature in condition_data.columns:
-                historical_median = condition_data[feature].median()
+            if feature in numeric_features and feature in medians:
+                historical_median = medians[feature]
                 if pd.notna(historical_median) and historical_median != 0:
                     deviation = abs((value - historical_median) / historical_median)
                     if deviation > 0.10:
