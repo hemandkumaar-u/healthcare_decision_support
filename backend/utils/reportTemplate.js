@@ -1,4 +1,4 @@
-const generateReportHtml = (patient, name, assessment, patientData = {}) => {
+const generateReportHtml = (patient, name, assessment, patientData = {}, medications = []) => {
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const riskLevel = assessment?.riskLevel || 'Unknown';
     const explanation = assessment?.explanation || 'No details available.';
@@ -28,15 +28,48 @@ const generateReportHtml = (patient, name, assessment, patientData = {}) => {
                         <tr>
                             <td><strong>${detail.feature}</strong></td>
                             <td>${detail.value}</td>
-                            <td>${detail.normal_median}</td>
-                            <td style="color: ${detail.contribution.includes('High') ? '#ef4444' : '#f97316'}; font-weight: bold;">
-                                ${detail.contribution}
+                            <td>${detail.normal_median || 'N/A'}</td>
+                            <td style="color: ${(detail.contribution || detail.status || '').includes('High') ? '#ef4444' : '#f97316'}; font-weight: bold;">
+                                ${detail.contribution || (detail.percentage ? `${detail.percentage}% impact` : 'N/A')}
                             </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         `;
+    }
+
+    let medicationsHtml = '';
+    if (medications && medications.length > 0) {
+        // filter out completely empty medication rows
+        const validMedications = medications.filter(med => med.medication && med.medication.trim() !== '');
+        if (validMedications.length > 0) {
+            medicationsHtml = `
+                <div class="section-title">Prescribed Medications</div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Medication</th>
+                            <th>Dosage</th>
+                            <th>Frequency</th>
+                            <th>Duration</th>
+                            <th>Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${validMedications.map(med => `
+                            <tr>
+                                <td><strong>${med.medication || 'N/A'}</strong></td>
+                                <td>${med.dosage || 'N/A'}</td>
+                                <td>${med.frequency || 'N/A'}</td>
+                                <td>${med.duration || 'N/A'}</td>
+                                <td>${med.instructions || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
     }
 
     return `
@@ -250,6 +283,8 @@ const generateReportHtml = (patient, name, assessment, patientData = {}) => {
                     </tr>
                 </tbody>
             </table>
+
+            ${medicationsHtml}
 
             <div class="signature-box">
                 <div class="signature-line">

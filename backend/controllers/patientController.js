@@ -125,6 +125,7 @@ exports.sendReport = async (req, res) => {
     const name = (patient && patient.name) ? patient.name : req.body.name;
     const patientData = req.body.patientData || {};
     const assessment = (patient && patient.riskAssessment) ? patient.riskAssessment : (req.body.riskAssessment || {});
+    const medications = (patient && patient.medications && patient.medications.length > 0) ? patient.medications : (req.body.medications || []);
     
     if (!email) {
       return res.status(400).json({ message: 'Patient does not have an email address on file, and no email was provided in the request.' });
@@ -147,7 +148,7 @@ exports.sendReport = async (req, res) => {
     });
     
     const { generateReportHtml } = require('../utils/reportTemplate');
-    const htmlContent = generateReportHtml(patient, name, assessment, patientData);
+    const htmlContent = generateReportHtml(patient, name, assessment, patientData, medications);
 
     let pdfBuffer = null;
     try {

@@ -63,10 +63,10 @@ X_train_final, X_val, y_train_final, y_val = train_test_split(X_train, y_train, 
 class_weights = compute_class_weight('balanced', classes=np.unique(y_train_final), y=y_train_final)
 class_weights_dict = dict(enumerate(class_weights))
 
-print("5. Reshaping data for GRU...")
-X_train_gru = np.reshape(X_train_final, (X_train_final.shape[0], 1, X_train_final.shape[1]))
-X_val_gru = np.reshape(X_val, (X_val.shape[0], 1, X_val.shape[1]))
-X_test_gru = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
+print("5. Reshaping data for Tabular model...")
+X_train_tabular = np.reshape(X_train_final, (X_train_final.shape[0], 1, X_train_final.shape[1]))
+X_val_tabular = np.reshape(X_val, (X_val.shape[0], 1, X_val.shape[1]))
+X_test_tabular = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 
 print("6. Building the Deep Tabular Optimized Model...")
 model = tf.keras.Sequential([
@@ -90,13 +90,13 @@ model = tf.keras.Sequential([
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy', tf.keras.metrics.AUC(name='auc')])
 
-print("7. Training the GRU model with Early Stopping and LR Reduction...")
+print("7. Training the Tabular model with Early Stopping and LR Reduction...")
 early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_auc', mode='max', patience=8, restore_best_weights=True)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_auc', mode='max', factor=0.5, patience=4, min_lr=1e-6)
 
 history = model.fit(
-    X_train_gru, y_train_final,
-    validation_data=(X_val_gru, y_val),
+    X_train_tabular, y_train_final,
+    validation_data=(X_val_tabular, y_val),
     epochs=100, 
     batch_size=1024, 
     class_weight=class_weights_dict,
@@ -104,11 +104,11 @@ history = model.fit(
     verbose=1
 )
 
-print("\n8. Evaluating the GRU Model on Unseen Test Data...")
-y_pred_probs = model.predict(X_test_gru, verbose=0)
+print("\n8. Evaluating the Deep Tabular Model on Unseen Test Data...")
+y_pred_probs = model.predict(X_test_tabular, verbose=0)
 y_pred_classes = (y_pred_probs > 0.5).astype(int).flatten()
 
-print("\n--- GRU Classification Report ---")
+print("\n--- Deep Tabular Classification Report ---")
 print(classification_report(y_test, y_pred_classes))
 
 try:
@@ -119,17 +119,17 @@ except:
 
 print("\n9. Generating Graphs and Saving...")
 # Save the model
-model.save("gru_patient_risk_model.keras")
+model.save("tabular_patient_risk_model.keras")
 
 # Generate Confusion Matrix
 cm = confusion_matrix(y_test, y_pred_classes)
 plt.figure(figsize=(8, 6))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-plt.title('Confusion Matrix - Optimized GRU Model')
+plt.title('Confusion Matrix - Optimized Tabular Model')
 plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
 plt.tight_layout()
-plt.savefig('gru_confusion_matrix.png')
+plt.savefig('tabular_confusion_matrix.png')
 
 # Generate Training History Graph
 plt.figure(figsize=(12, 5))
@@ -149,7 +149,7 @@ plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.tight_layout()
-plt.savefig('gru_training_history.png')
+plt.savefig('tabular_training_history.png')
 
-print("\nModel saved successfully as 'gru_patient_risk_model.keras'!")
-print("Graphs saved as 'gru_confusion_matrix.png' and 'gru_training_history.png'!")
+print("\nModel saved successfully as 'tabular_patient_risk_model.keras'!")
+print("Graphs saved as 'tabular_confusion_matrix.png' and 'tabular_training_history.png'!")

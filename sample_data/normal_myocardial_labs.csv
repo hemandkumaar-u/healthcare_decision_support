@@ -1,0 +1,10 @@
+test_name,result,unit,reference_range,date_collected
+Troponin I,0.01,ng/mL,<0.04,2023-10-01
+CK-MB,1.2,ng/mL,0-3,2023-10-01
+BNP,45,pg/mL,<100,2023-10-01
+Total Cholesterol,175,mg/dL,<200,2023-10-01
+LDL Cholesterol,95,mg/dL,<100,2023-10-01
+HDL Cholesterol,55,mg/dL,>40,2023-10-01
+Triglycerides,120,mg/dL,<150,2023-10-01
+Creatinine,0.8,mg/dL,0.6-1.1,2023-10-01
+Fasting Glucose,88,mg/dL,70-99,2023-10-01
